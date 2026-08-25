@@ -1,0 +1,23 @@
+[Firebase] ✓ Admin SDK initialized
+[Firebase]   project: etlingo
+[Firebase]   service account: firebase-adminsdk-fbsvc@etlingo.iam.gserviceaccount.com
+==========================================
+  EtLingo backend running at :5199
+  Health   http://localhost:5199/api/health
+  API v1   http://localhost:5199/api/v1
+==========================================
+[db] MySQL UP | Redis UP
+  Worker   campaign runner every 15s
+2026-08-24T13:57:32.821Z POST /api/v1/auth/login → 200 (308.936 ms) [anon] {"password":"•••","email":"admin@etlang.app"}
+[users] admin created learner #4 (smoke.165732@test.et)
+2026-08-24T13:57:33.179Z POST /api/v1/admin/app-users → 201 (321.879 ms) [admin#1/super] {"email":"smoke.165732@test.et","display_name":"Smoke Learner","password":"•••"}
+2026-08-24T13:57:33.195Z GET /api/v1/admin/app-users/4 → 200 (8.103 ms) [admin#1/super]-
+[users] admin updated learner #4 — display_name, email, xp, streak
+2026-08-24T13:57:33.216Z PUT /api/v1/admin/app-users/4 → 200 (14.111 ms) [admin#1/super] {"xp":120,"email":"renamed.165732@test.et","streak":4,"display_name":"Renamed Learner"}
+2026-08-24T13:57:33.228Z POST /api/v1/admin/app-users → 400 (5.316 ms) [admin#1/super] {"email":"renamed.165732@test.et"}
+2026-08-24T13:57:33.241Z POST /api/v1/admin/notifications → 201 (7.178 ms) [admin#1/super] {"title":"Just for you","body":"direct msg","userId":4}
+[campaign] #1 created — "Round-based hello" (all, 1/round every 6s)
+2026-08-24T13:57:33.250Z POST /api/v1/admin/campaigns → 201 (5.393 ms) [admin#1/super] {"audience":"all","title":"Round-based hello","body":"campaign body","intervalMinutes":0.1,"batchSize":1}
+[campaign] #1 round delivered to 1 learner(s)
+2026-08-24T13:57:41.268Z GET /api/v1/admin/campaigns → 200 (5.882 ms) [admin#1/super]-
+2026-08-24T13:57:41.294Z POST /api/v1/admin/campaigns/1/cancel → 200 (5.792 ms) [admin#1/super]-

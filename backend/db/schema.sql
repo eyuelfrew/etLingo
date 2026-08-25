@@ -1,0 +1,126 @@
+-- EtLang database schema
+CREATE DATABASE IF NOT EXISTS etlang CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE etlang;
+
+CREATE TABLE IF NOT EXISTS admins (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('super', 'editor') NOT NULL DEFAULT 'editor',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS languages (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(8) NOT NULL UNIQUE,
+  name VARCHAR(80) NOT NULL,
+  native_name VARCHAR(120) NOT NULL,
+  script_preview VARCHAR(160) DEFAULT '',
+  speakers VARCHAR(24) DEFAULT '',
+  region VARCHAR(120) DEFAULT '',
+  color_hex CHAR(7) NOT NULL DEFAULT '#078930',
+  dark_hex CHAR(7) NOT NULL DEFAULT '#056B24',
+  hello_target VARCHAR(160) DEFAULT '',
+  hello_meaning VARCHAR(240) DEFAULT '',
+  icon VARCHAR(64) DEFAULT 'waving_hand_rounded',
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS units (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  language_id INT UNSIGNED NOT NULL,
+  title VARCHAR(160) NOT NULL,
+  subtitle VARCHAR(200) DEFAULT '',
+  color_hex CHAR(7) NOT NULL DEFAULT '#078930',
+  dark_hex CHAR(7) NOT NULL DEFAULT '#056B24',
+  icon VARCHAR(64) DEFAULT 'waving_hand_rounded',
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (language_id) REFERENCES languages(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS lessons (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  unit_id INT UNSIGNED NOT NULL,
+  title VARCHAR(160) NOT NULL,
+  is_boss TINYINT(1) NOT NULL DEFAULT 0,
+  xp_reward INT NOT NULL DEFAULT 10,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS questions (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  lesson_id INT UNSIGNED NOT NULL,
+  kind ENUM('mcq', 'fill', 'match', 'listen') NOT NULL,
+  prompt VARCHAR(300) NOT NULL,
+  sub_prompt VARCHAR(300) DEFAULT '',
+  hint VARCHAR(160) DEFAULT '',
+  options JSON NULL,
+  answer_index INT DEFAULT -1,
+  match_left JSON NULL,
+  match_right JSON NULL,
+  audio_url VARCHAR(255) DEFAULT '',
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS phrases (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  language_id INT UNSIGNED NOT NULL,
+  target VARCHAR(200) NOT NULL,
+  translit VARCHAR(200) DEFAULT '',
+  meaning VARCHAR(300) DEFAULT '',
+  category VARCHAR(60) DEFAULT 'Basics',
+  audio_url VARCHAR(255) DEFAULT '',
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (language_id) REFERENCES languages(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS app_users (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  firebase_uid VARCHAR(128) UNIQUE NULL,
+  device_id VARCHAR(64) UNIQUE NULL,
+  email VARCHAR(190) UNIQUE NULL,
+  display_name VARCHAR(120) DEFAULT '',
+  password_hash VARCHAR(255) NULL,
+  provider ENUM('guest', 'email', 'google') NOT NULL DEFAULT 'guest',
+  status ENUM('active', 'banned') NOT NULL DEFAULT 'active',
+  xp INT NOT NULL DEFAULT 0,
+  hearts INT NOT NULL DEFAULT 5,
+  streak INT NOT NULL DEFAULT 0,
+  last_active_date DATE NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  recipient_user_id INT UNSIGNED NULL,
+  title VARCHAR(160) NOT NULL,
+  body VARCHAR(500) DEFAULT '',
+  type VARCHAR(40) DEFAULT 'general',
+  read_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_recipient_user (recipient_user_id),
+  CONSTRAINT fk_notif_user FOREIGN KEY (recipient_user_id)
+    REFERENCES app_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS lesson_progress (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  app_user_id INT UNSIGNED NOT NULL,
+  lesson_id INT UNSIGNED NOT NULL,
+  mistakes INT NOT NULL DEFAULT 0,
+  xp_earned INT NOT NULL DEFAULT 0,
+  completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (app_user_id) REFERENCES app_users(id) ON DELETE CASCADE,
+  FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_user_lesson (app_user_id, lesson_id)
+) ENGINE=InnoDB;

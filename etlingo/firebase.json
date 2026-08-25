@@ -1,0 +1,11 @@
+{
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "etLingo",
+        "supportEmail": "eyuelfrew430@gmail.com"
+      }
+    }
+  }
+}

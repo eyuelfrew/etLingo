@@ -1,0 +1,6 @@
+==========================================
+  EtLang backend running at :5050
+  Health   http://localhost:5050/api/health
+==========================================
+  MySQL : [OFFLINE] start MySQL, then run npm run db:init
+  Redis : [OK] connected (redis://localhost:6379)

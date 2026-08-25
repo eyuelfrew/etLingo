@@ -1,0 +1,305 @@
+import 'package:flutter/material.dart';
+
+enum QuestionKind { mcq, match, fill, listen }
+
+/// Maps admin-managed icon names (e.g. 'waving_hand_rounded') to Material icons.
+IconData iconFromName(String? name) {
+  const icons = <String, IconData>{
+    'waving_hand_rounded': Icons.waving_hand_rounded,
+    'menu_book_rounded': Icons.menu_book_rounded,
+    'school_rounded': Icons.school_rounded,
+    'sailing_rounded': Icons.sailing_rounded,
+    'coffee_rounded': Icons.coffee_rounded,
+    'music_note_rounded': Icons.music_note_rounded,
+    'landscape_rounded': Icons.landscape_rounded,
+    'flag_rounded': Icons.flag_rounded,
+    'star_rounded': Icons.star_rounded,
+    'chat_bubble_rounded': Icons.chat_bubble_rounded,
+    'restaurant_rounded': Icons.restaurant_rounded,
+    'home_rounded': Icons.home_rounded,
+    'shopping_bag_rounded': Icons.shopping_bag_rounded,
+    'directions_bus_rounded': Icons.directions_bus_rounded,
+    'favorite_rounded': Icons.favorite_rounded,
+  };
+  return icons[name] ?? Icons.waving_hand_rounded;
+}
+
+Color colorFromHex(dynamic hex, {Color fallback = const Color(0xFF078930)}) {
+  if (hex is! String || hex.length < 7) return fallback;
+  final value = int.tryParse(hex.substring(1, 7), radix: 16);
+  if (value == null) return fallback;
+  return Color(0xFF000000 | value);
+}
+
+class WordOption {
+  final String label;
+  final String? emoji;
+  const WordOption(this.label, {this.emoji});
+
+  factory WordOption.fromJson(dynamic json) {
+    if (json is Map<String, dynamic>) {
+      return WordOption(
+        (json['label'] ?? '').toString(),
+        emoji: json['emoji']?.toString(),
+      );
+    }
+    return WordOption(json.toString());
+  }
+}
+
+class Question {
+  final QuestionKind kind;
+  final String prompt;
+  final String subPrompt;
+  final String hint;
+  final List<WordOption> options;
+  final int answerIndex;
+  final List<String> matchLeft;
+  final List<String> matchRight;
+  final String audioUrl;
+
+  const Question({
+    required this.kind,
+    required this.prompt,
+    this.subPrompt = '',
+    this.hint = '',
+    this.options = const [],
+    this.answerIndex = -1,
+    this.matchLeft = const [],
+    this.matchRight = const [],
+    this.audioUrl = '',
+  });
+
+  const Question.mcq({
+    required this.prompt,
+    this.subPrompt = '',
+    this.hint = '',
+    required this.options,
+    required this.answerIndex,
+    this.audioUrl = '',
+  }) : kind = QuestionKind.mcq,
+       matchLeft = const [],
+       matchRight = const [];
+
+  const Question.fill({
+    required this.prompt,
+    required this.subPrompt,
+    required this.options,
+    required this.answerIndex,
+    this.audioUrl = '',
+  }) : kind = QuestionKind.fill,
+       hint = '',
+       matchLeft = const [],
+       matchRight = const [];
+
+  const Question.match({
+    required this.prompt,
+    required this.matchLeft,
+    required this.matchRight,
+    this.audioUrl = '',
+  }) : kind = QuestionKind.match,
+       subPrompt = '',
+       hint = '',
+       options = const [],
+       answerIndex = -1;
+
+  factory Question.fromJson(Map<String, dynamic> j) {
+    final kindStr = (j['kind'] ?? 'mcq').toString();
+    final kind = QuestionKind.values.firstWhere(
+      (k) => k.name == kindStr,
+      orElse: () => QuestionKind.mcq,
+    );
+    List<String> stringList(dynamic v) =>
+        v is List ? v.map((e) => e.toString()).toList() : <String>[];
+
+    return Question(
+      kind: kind,
+      prompt: (j['prompt'] ?? '').toString(),
+      subPrompt: (j['subPrompt'] ?? '').toString(),
+      hint: (j['hint'] ?? '').toString(),
+      options: j['options'] is List
+          ? (j['options'] as List).map(WordOption.fromJson).toList()
+          : const <WordOption>[],
+      answerIndex:
+          j['answerIndex'] is num ? (j['answerIndex'] as num).toInt() : -1,
+      matchLeft: stringList(j['matchLeft']),
+      matchRight: stringList(j['matchRight']),
+      audioUrl: (j['audioUrl'] ?? '').toString(),
+    );
+  }
+}
+
+class Lesson {
+  final String id;
+  final String title;
+  final bool isBoss;
+  final List<Question> questions;
+  const Lesson(this.id, this.title, {this.isBoss = false, required this.questions});
+
+  factory Lesson.fromJson(Map<String, dynamic> j, {required List<Question> questions}) {
+    return Lesson(
+      (j['id'] ?? '').toString(),
+      (j['title'] ?? '').toString(),
+      isBoss: j['isBoss'] == true || j['isBoss'] == 1,
+      questions: questions,
+    );
+  }
+}
+
+class Unit {
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Color dark;
+  final IconData icon;
+  final List<Lesson> lessons;
+  const Unit({
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.dark,
+    required this.icon,
+    required this.lessons,
+  });
+
+  factory Unit.fromJson(Map<String, dynamic> j, {required List<Lesson> lessons}) {
+    return Unit(
+      title: (j['title'] ?? '').toString(),
+      subtitle: (j['subtitle'] ?? '').toString(),
+      color: colorFromHex(j['colorHex']),
+      dark: colorFromHex(j['darkHex'], fallback: const Color(0xFF056B24)),
+      icon: iconFromName(j['icon']?.toString()),
+      lessons: lessons,
+    );
+  }
+}
+
+class Phrase {
+  final String target;
+  final String translit;
+  final String meaning;
+  final String category;
+  final String audioUrl;
+  const Phrase(this.target, this.translit, this.meaning, this.category,
+      {this.audioUrl = ''});
+
+  factory Phrase.fromJson(Map<String, dynamic> j) {
+    return Phrase(
+      (j['target'] ?? '').toString(),
+      (j['translit'] ?? '').toString(),
+      (j['meaning'] ?? '').toString(),
+      (j['category'] ?? 'Basics').toString(),
+      audioUrl: (j['audioUrl'] ?? j['audio_url'] ?? '').toString(),
+    );
+  }
+}
+
+class Language {
+  final String id;
+  final String name;
+  final String nativeName;
+  final String scriptPreview;
+  final String speakers;
+  final String region;
+  final Color color;
+  final Color dark;
+  final IconData icon;
+  final bool comingSoon;
+  final String helloTarget;
+  final String helloMeaning;
+  final List<Unit> units;
+  final List<Phrase> phrases;
+
+  const Language({
+    required this.id,
+    required this.name,
+    required this.nativeName,
+    required this.scriptPreview,
+    required this.speakers,
+    required this.region,
+    required this.color,
+    required this.dark,
+    required this.icon,
+    this.comingSoon = false,
+    required this.helloTarget,
+    required this.helloMeaning,
+    required this.units,
+    required this.phrases,
+  });
+
+  /// Metadata-only language (used for the picker before content is loaded).
+  factory Language.summaryJson(Map<String, dynamic> j) {
+    return Language(
+      id: (j['id'] ?? '').toString(),
+      name: (j['name'] ?? '').toString(),
+      nativeName: (j['nativeName'] ?? '').toString(),
+      scriptPreview: (j['scriptPreview'] ?? '').toString(),
+      speakers: (j['speakers'] ?? '').toString(),
+      region: (j['region'] ?? '').toString(),
+      color: colorFromHex(j['colorHex']),
+      dark: colorFromHex(j['darkHex'], fallback: const Color(0xFF056B24)),
+      icon: iconFromName(j['icon']?.toString()),
+      helloTarget: (j['helloTarget'] ?? '').toString(),
+      helloMeaning: (j['helloMeaning'] ?? '').toString(),
+      units: const [],
+      phrases: const [],
+    );
+  }
+
+  /// Full language incl. units/lessons/questions/phrases from `/app/bootstrap/:code`.
+  factory Language.fullJson(
+    Map<String, dynamic> lang,
+    List<dynamic> unitList,
+    List<dynamic> lessonList,
+    List<dynamic> questionList,
+    List<dynamic> phraseList,
+  ) {
+    final summary = Language.summaryJson(lang);
+
+    // Group questions under their lesson, then lessons under their unit.
+    final questionsByLesson = <String, List<Question>>{};
+    for (final raw in questionList) {
+      final q = raw as Map<String, dynamic>;
+      final lessonId = (q['lessonId'] ?? '').toString();
+      questionsByLesson.putIfAbsent(lessonId, () => []).add(Question.fromJson(q));
+    }
+    final lessonsByUnit = <String, List<Lesson>>{};
+    for (final raw in lessonList) {
+      final l = raw as Map<String, dynamic>;
+      final lessonId = (l['id'] ?? '').toString();
+      final unitId = (l['unitId'] ?? '').toString();
+      lessonsByUnit
+          .putIfAbsent(unitId, () => [])
+          .add(Lesson.fromJson(l, questions: questionsByLesson[lessonId] ?? const []));
+    }
+
+    final units = unitList.map((raw) {
+      final map = raw as Map<String, dynamic>;
+      final unitId = (map['id'] ?? '').toString();
+      return Unit.fromJson(map, lessons: lessonsByUnit[unitId] ?? const []);
+    }).toList();
+
+    return Language(
+      id: summary.id,
+      name: summary.name,
+      nativeName: summary.nativeName,
+      scriptPreview: summary.scriptPreview.isEmpty
+          ? summary.helloTarget
+          : summary.scriptPreview,
+      speakers: summary.speakers,
+      region: summary.region,
+      color: summary.color,
+      dark: summary.dark,
+      icon: summary.icon,
+      helloTarget: summary.helloTarget,
+      helloMeaning: summary.helloMeaning,
+      units: units,
+      phrases: phraseList
+          .map((p) => Phrase.fromJson(p as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  int get totalLessons =>
+      units.fold(0, (sum, u) => sum + u.lessons.length);
+}
