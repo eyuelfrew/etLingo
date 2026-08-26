@@ -36,6 +36,9 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
       unawaited(state.loadLanguages());
       unawaited(auth.refreshProfile());
+      // Re-attach this device to push (persisted sessions) and keep tokens fresh.
+      auth.listenForTokenRefresh();
+      unawaited(auth.registerPushToken());
 
       Navigator.of(context)
           .pushReplacementNamed(restored ? '/home' : '/onboarding');

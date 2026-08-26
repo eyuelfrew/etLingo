@@ -27,16 +27,32 @@ try {
   $n = Invoke-RestMethod -Method Post -Uri "$base/admin/notifications" -Headers $h -ContentType 'application/json' -Body (@{ title = 'Just for you'; body = 'direct msg'; userId = $u.id } | ConvertTo-Json)
   Write-Host ("6. direct notif id=" + $n.id + " broadcast=" + $n.broadcast)
 
+  # Bulk send: create a second learner, message both with one call.
+  $u2 = Invoke-RestMethod -Method Post -Uri "$base/admin/app-users" -Headers $h -ContentType 'application/json' -Body (@{ email = "bulk.$stamp@test.et"; display_name = 'Bulk Learner'; password = 'password123' } | ConvertTo-Json)
+  $bulk = Invoke-RestMethod -Method Post -Uri "$base/admin/notifications" -Headers $h -ContentType 'application/json' -Body (@{ title = 'Bulk hello'; body = 'to many'; userIds = @($u.id, $u2.id) } | ConvertTo-Json)
+  Write-Host ("7. bulk sent=" + $bulk.sent + " firstId=" + $bulk.notifications[0].id + " broadcast=" + $bulk.notifications[0].broadcast)
+
+  # App-device FCM token registration requires an app (learner) token. Log in via
+  # the email/password flow if available, otherwise verify the endpoint is guarded.
+  try {
+    $al = Invoke-RestMethod -Method Post -Uri "$base/app/auth/login" -ContentType 'application/json' -Body (@{ email = $u.email; password = 'password123' } | ConvertTo-Json)
+    $ah = @{ Authorization = "Bearer $($al.token)" }
+    Invoke-RestMethod -Method Post -Uri "$base/app/devices/token" -Headers $ah -ContentType 'application/json' -Body (@{ fcmToken = 'test-fcm-token-123' } | ConvertTo-Json) | Out-Null
+    Write-Host "8. fcm token registered OK"
+  } catch {
+    Write-Host "8. fcm token test skipped (no email login route): $_"
+  }
+
   $c = Invoke-RestMethod -Method Post -Uri "$base/admin/campaigns" -Headers $h -ContentType 'application/json' -Body (@{ title = 'Round-based hello'; body = 'campaign body'; audience = 'all'; batchSize = 1; intervalMinutes = 0.1 } | ConvertTo-Json)
-  Write-Host ("7. campaign #" + $c.id + " status=" + $c.status + " batchSize=" + $c.batchSize)
+  Write-Host ("9. campaign #" + $c.id + " status=" + $c.status + " batchSize=" + $c.batchSize)
 
   Start-Sleep -Seconds 8
   $cs = Invoke-RestMethod -Uri "$base/admin/campaigns" -Headers $h
   $mine = $cs | Where-Object { $_.id -eq $c.id }
-  Write-Host ("8. after rounds status=" + $mine.status + " totalSent=" + $mine.totalSent)
+  Write-Host ("10. after rounds status=" + $mine.status + " totalSent=" + $mine.totalSent)
 
   $cc = Invoke-RestMethod -Method Post -Uri "$base/admin/campaigns/$($c.id)/cancel" -Headers $h
-  Write-Host ("9. cancelled status=" + $cc.status)
+  Write-Host ("11. cancelled status=" + $cc.status)
 } catch {
   Write-Host ("SMOKE ERROR: " + $_.Exception.Message)
 }

@@ -469,8 +469,15 @@ class _ZigzagNodesState extends State<ZigzagNodes>
                   isCurrent: i == currentIdx,
                   unlocked: isUnlocked(lessons[i]),
                   pulse: _pulse,
-                  onTap: () async {
-                    await Navigator.of(context).push(MaterialPageRoute(
+                  onTap: () {
+                    if (lessons[i].questions.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                            '"${lessons[i].title}" has no questions yet — coming soon!'),
+                      ));
+                      return;
+                    }
+                    Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => LessonScreen(
                         state: widget.state,
                         lesson: lessons[i],

@@ -40,6 +40,13 @@ dependencies:
   audioplayers: ^6.1.0
   record: ^5.1.2
   path_provider: ^2.1.4
+  firebase_messaging: ^15.2.10
+
+dependency_overrides:
+  record_platform_interface: 1.4.0
+  record_android: 1.4.5
+  record_linux: 1.2.1
+  record_windows: 1.0.7
 
 dev_dependencies:
   flutter_test:

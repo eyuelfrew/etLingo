@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Required on Android 13+ for Firebase Cloud Messaging notifications to
+         show in the system tray. FirebaseMessaging.requestPermission() prompts
+         the user for this at runtime. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:label="etlingo"
         android:name="${applicationName}"

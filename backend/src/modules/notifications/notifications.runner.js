@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { Campaign, CampaignRecipient, Notification } from './notifications.models.js';
+import { pushToUsers } from './notifications.push.js';
 
 // Delivers due campaign rounds. Cross-module note: reads the users module's
 // AppUser table to resolve the audience — when extracting this service,
@@ -67,6 +68,10 @@ export async function processDueCampaigns() {
         user_id: user.id,
       });
     }
+
+    // Best-effort device push for this round's learners.
+    pushToUsers(recipients.map(u => u.id), { title: campaign.title, body: campaign.body }).catch(
+      (err) => console.error(`[campaign] push error: ${err.message}`));
 
     await campaign.increment('total_sent', { by: recipients.length });
     await campaign.update({

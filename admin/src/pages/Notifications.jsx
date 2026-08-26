@@ -16,14 +16,22 @@ export default function Notifications() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
+  // Targeted-send picker: "everyone" (broadcast) or a chosen subset of learners.
+  const [targetMode, setTargetMode] = useState('everyone'); // 'everyone' | 'some'
+  const [learners, setLearners] = useState([]);
+  const [targetQ, setTargetQ] = useState('');
+  const [targetIds, setTargetIds] = useState([]);
+
   const load = useCallback(async () => {
     try {
-      const [n, c] = await Promise.all([
+      const [n, c, l] = await Promise.all([
         client.get('/admin/notifications'),
         client.get('/admin/campaigns'),
+        client.get('/admin/app-users'),
       ]);
       setRows(n.data);
       setCampaigns(c.data);
+      setLearners(l.data);
     } catch (e) {
       setError(e.response?.data?.error || 'Failed to load notifications.');
     }
@@ -37,18 +45,36 @@ export default function Notifications() {
     setTimeout(() => setNotice(''), 2500);
   };
 
-  // ── Instant broadcast (everyone, delivered immediately) ─────────────────────
+  // ── Instant send: broadcast (everyone) or a chosen subset, immediately ────────
   const sendInstant = async (e) => {
     e.preventDefault();
     try {
-      await client.post('/admin/notifications', instant);
+      const targeted = targetMode === 'some' && targetIds.length > 0;
+      const payload = targeted ? { ...instant, userIds: targetIds } : instant;
+      const res = await client.post('/admin/notifications', payload);
+      const sent = res.data?.sent ?? 1;
       setInstant(emptyForm);
-      flash('Broadcast sent ✓');
+      setTargetIds([]);
+      setTargetQ('');
+      setTargetMode('everyone');
+      flash(targeted ? `Sent to ${sent} learner(s) ✓` : 'Broadcast sent ✓');
       await load();
     } catch (err) {
       setError(err.response?.data?.error || 'Send failed');
     }
   };
+
+  const toggleTarget = (id) => {
+    setTargetIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const filteredLearners = learners.filter(
+    (u) =>
+      (u.displayName || '').toLowerCase().includes(targetQ.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(targetQ.toLowerCase()),
+  );
 
   // ── Scheduled campaign (batched rounds) ─────────────────────────────────────
   const createCampaign = async (e) => {
@@ -127,8 +153,73 @@ export default function Notifications() {
         <Input label="Message">
           <textarea rows={3} maxLength={500} value={instant.body} onChange={(e) => setInstant({ ...instant, body: e.target.value })} className={`${inputCls} resize-y`} />
         </Input>
-        <button type="submit" className="w-fit rounded-xl bg-yellow-500 px-5 py-2.5 text-sm font-bold text-white shadow transition hover:bg-yellow-600">
-          Send broadcast
+
+        {/* -- Recipients: everyone or a selected subset ---------------------- */}
+        <div>
+          <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">Send to</span>
+          <div className="flex items-center gap-2">
+            {[
+              ['everyone', 'Everyone'],
+              ['some', 'Specific learners'],
+            ].map(([val, label]) => (
+              <button
+                type="button"
+                key={val}
+                onClick={() => setTargetMode(val)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                  targetMode === val
+                    ? val === 'everyone'
+                      ? 'border-yellow-500 bg-yellow-100 text-yellow-800'
+                      : 'border-green-600 bg-green-100 text-green-800'
+                    : 'border-stone-200 text-stone-500 hover:bg-stone-50'
+                }`}
+              >
+                {label}
+                {val === 'some' && targetIds.length > 0 && (
+                  <span className="ml-1">{targetIds.length}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {targetMode === 'some' && (
+            <div className="mt-3">
+              <input
+                value={targetQ}
+                onChange={(e) => setTargetQ(e.target.value)}
+                placeholder="Search name / email…"
+                className={`${inputCls} !mt-0`}
+              />
+              {filteredLearners.length === 0 && (
+                <p className="mt-2 text-xs font-medium text-stone-400">No learners match.</p>
+              )}
+              <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-stone-200 p-2">
+                {filteredLearners.map((u) => {
+                  const sel = targetIds.includes(u.id);
+                  return (
+                    <label key={u.id} className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition ${sel ? 'bg-green-50' : 'hover:bg-stone-50'}`}>
+                      <input
+                        type="checkbox"
+                        checked={sel}
+                        onChange={() => toggleTarget(u.id)}
+                        className="h-4 w-4 accent-green-700"
+                      />
+                      <span className="min-w-0 truncate font-semibold text-stone-700">
+                        {u.displayName || '—'}
+                      </span>
+                      <span className="ml-auto truncate text-xs font-medium text-stone-400">{u.email}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button type="submit" disabled={targetMode === 'some' && targetIds.length === 0} className="w-fit rounded-xl bg-yellow-500 px-5 py-2.5 text-sm font-bold text-white shadow transition hover:bg-yellow-600 disabled:cursor-not-allowed disabled:opacity-40">
+          {targetMode === 'some'
+            ? `Send to ${targetIds.length || 0} learner(s)`
+            : 'Send broadcast'}
         </button>
       </form>
 

@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { requireAuth } from '../../core/auth.js';
+import { requireAuth, requireAppAuth } from '../../core/auth.js';
 import {
   list, getOne, create, update, resetProgress, remove,
+  registerFcmToken, unregisterFcmToken,
 } from './users.controller.js';
 
 const router = Router();
@@ -14,5 +15,9 @@ router.get('/admin/app-users/:id', requireAuth, getOne);
 router.put('/admin/app-users/:id', requireAuth, update);
 router.post('/admin/app-users/:id/reset-progress', requireAuth, resetProgress);
 router.delete('/admin/app-users/:id', requireAuth, remove);
+
+// ── App-user device push token (mobile app self-service) ──────────────────────
+router.post('/app/devices/token', requireAppAuth, registerFcmToken);
+router.delete('/app/devices/token', requireAppAuth, unregisterFcmToken);
 
 export default router;

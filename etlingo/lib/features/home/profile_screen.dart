@@ -289,6 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'Buna Master',
                     desc: 'Finish Coffee unit',
                     unlocked: lang.units.length > 1 &&
+                        lang.units[1].lessons.isNotEmpty &&
                         state.completedLessons
                             .contains(lang.units[1].lessons.last.id),
                   ),

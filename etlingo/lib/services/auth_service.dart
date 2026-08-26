@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
 import 'content_service.dart';
+import 'push_notification_service.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -120,12 +121,64 @@ class AuthService extends ChangeNotifier {
         }
         await _persistUser();
       }
+      // Register this device for push once the app session exists.
+      await registerPushToken();
     } catch (e) {
       rethrow;
     } finally {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  // ── FCM device-token registration ───────────────────────────────────────────
+  // The push token is treated as a hard requirement on mobile: it is registered
+  // every time a session goes live (fresh sign-in and persisted cold-start) and
+  // removed on sign-out. Desktop/unsupported platforms are skipped so the app
+  // still works, but a mobile device will always attach its token.
+
+  /// Register the current device's FCM token for the signed-in user.
+  ///
+  /// Returns `true` when the token was uploaded, `false` when there is no
+  /// session, FCM is unsupported here, permission was denied, or the upload
+  /// failed (the [onTokenRefresh] listener will retry on the next rotation).
+  Future<bool> registerPushToken() async {
+    if (_token == null) return false;
+    if (!PushNotificationService.isSupported) {
+      debugPrint('FCM not supported on this platform — skipping token upload');
+      return false;
+    }
+    final fcm = await PushNotificationService.obtainToken();
+    if (fcm == null) {
+      debugPrint('FCM token unavailable (permission denied?) — not uploaded');
+      return false;
+    }
+    try {
+      await _api.post('/app/devices/token', body: {'fcmToken': fcm});
+      debugPrint('FCM token registered for user $_user ($_email)');
+      return true;
+    } catch (e) {
+      // Retried next session / token rotation. Sign-in itself still succeeds.
+      debugPrint('FCM token upload failed: $e');
+      return false;
+    }
+  }
+
+  /// Remove the device from push on sign-out so it stops receiving messages.
+  Future<void> unregisterPushToken() async {
+    if (_token == null || !PushNotificationService.isSupported) return;
+    try {
+      await _api.delete('/app/devices/token');
+      debugPrint('FCM token removed for user on sign-out');
+    } catch (e) {
+      debugPrint('FCM token removal failed (best-effort): $e');
+    }
+  }
+
+  /// Keep the stored token in sync with the OS whenever Firebase rotates it.
+  /// Call once from the widget tree (e.g. root) after auth is ready.
+  void listenForTokenRefresh() {
+    PushNotificationService.onTokenRefresh().listen((_) => registerPushToken());
   }
 
   /// Pull the latest profile (xp/hearts/streak/name) from the backend.
@@ -171,6 +224,8 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    // Deregister this device from push before we drop the session token.
+    await unregisterPushToken();
     try {
       await _googleSignIn.signOut();
       await _auth.signOut();

@@ -25,6 +25,28 @@ async function withStats(user) {
 
 // ── App user self-service ─────────────────────────────────────────────────────
 
+// Register/update this device's FCM push token so the notifications module can
+// deliver device notifications to this learner. Bound to the caller's user id.
+export const registerFcmToken = asyncHandler(async (req, res) => {
+  const user = await AppUser.findByPk(req.auth.sub);
+  if (!user) throw unauthorized('User not found');
+
+  const { fcmToken } = req.body || {};
+  if (!fcmToken || !String(fcmToken).trim()) throw badRequest('fcmToken is required');
+  if (String(fcmToken).length > 255) throw badRequest('fcmToken is too long');
+
+  await user.update({ fcm_token: String(fcmToken).trim() });
+  res.json({ ok: true });
+});
+
+// Remove this device's FCM token (e.g. on sign-out) so it stops receiving pushes.
+export const unregisterFcmToken = asyncHandler(async (req, res) => {
+  const user = await AppUser.findByPk(req.auth.sub);
+  if (!user) throw unauthorized('User not found');
+  await user.update({ fcm_token: null });
+  res.json({ ok: true });
+});
+
 export const getAppProfile = asyncHandler(async (req, res) => {
   const user = await AppUser.findByPk(req.auth.sub);
   if (!user) throw unauthorized('User not found');

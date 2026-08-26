@@ -33,13 +33,21 @@ async function checkMysql() {
 
 async function checkRedis() {
   try {
-    const { default: redis } = await import('./redis.js');
-    if (redis?.status === 'connecting' || redis?.status === 'ready') {
+    const { default: redis, redisEnabled } = await import('./redis.js');
+    if (!redisEnabled || !redis) {
+      redisStatus = 'disabled';
+      redisHint = '';
+      return;
+    }
+    // Only a fully established connection counts. ioredis reports
+    // 'connecting'/'reconnecting' forever while Redis is down, which used to
+    // be misread as UP.
+    if (redis.status === 'ready') {
       redisStatus = 'up';
       redisHint = '';
     } else {
       redisStatus = 'down';
-      redisHint = 'Redis not available (optional — app works without it)';
+      redisHint = 'Redis not reachable (optional — app works without it)';
     }
   } catch {
     redisStatus = 'down';
@@ -52,7 +60,11 @@ export async function checkStatus() {
 }
 
 function desc(label, status, hint) {
-  const icon = status === 'up' ? 'UP' : status === 'down' ? 'OFFLINE' : '...';
+  const icon =
+    status === 'up' ? 'UP'
+    : status === 'down' ? 'OFFLINE'
+    : status === 'disabled' ? 'DISABLED (no REDIS_URL)'
+    : '...';
   const extra = hint ? ` — ${hint}` : '';
   return `${label} ${icon}${extra}`;
 }

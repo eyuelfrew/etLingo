@@ -10,6 +10,7 @@ export const AppUser = sequelize.define('AppUser', {
   id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
   firebase_uid: { type: DataTypes.STRING(128), unique: true, allowNull: true },
   device_id: { type: DataTypes.STRING(64), unique: true, allowNull: true },
+  fcm_token: { type: DataTypes.STRING(255), allowNull: true },
   email: { type: DataTypes.STRING(190), unique: true, allowNull: true },
   display_name: { type: DataTypes.STRING(120), defaultValue: '' },
   password_hash: { type: DataTypes.STRING(255), allowNull: true },

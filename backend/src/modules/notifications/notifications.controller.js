@@ -1,6 +1,7 @@
 import { Op } from 'sequelize';
 import { Notification, Campaign, CampaignRecipient } from './notifications.models.js';
 import { asyncHandler, badRequest, notFound } from '../../core/http.js';
+import { pushToUsers, pushToAll } from './notifications.push.js';
 
 function toJSON(n) {
   return {
@@ -19,18 +20,68 @@ function toJSON(n) {
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
+// Parse an optional recipient spec from the request body:
+//   { userId }        → one user
+//   { userIds: [...] } → a chosen set of users (bulk)
+//   neither           → broadcast to everyone
+// Returns [null] for broadcast, or an array of validated user ids.
+function parseRecipients({ userId, userIds }) {
+  if (Array.isArray(userIds)) {
+    const ids = [...new Set(
+      userIds.map(Number).filter(n => Number.isInteger(n) && n > 0),
+    )];
+    if (ids.length === 0) throw badRequest('userIds must be an array of valid user ids');
+    return ids;
+  }
+  if (userId !== undefined && userId !== null && userId !== '') {
+    const id = Number(userId);
+    if (!Number.isInteger(id) || id <= 0) throw badRequest('userId must be a positive integer');
+    return [id];
+  }
+  return null; // broadcast
+}
+
 export const send = asyncHandler(async (req, res) => {
-  const { title, body = '', type = 'general', userId } = req.body || {};
+  const { title, body = '', type = 'general', userId, userIds } = req.body || {};
   if (!title || !String(title).trim()) throw badRequest('title is required');
 
-  const notification = await Notification.create({
-    recipient_user_id: userId || null,
+  const recipients = parseRecipients({ userId, userIds });
+  const base = {
     title: String(title).slice(0, 160),
     body: String(body).slice(0, 500),
     type: String(type).slice(0, 40),
-  });
+  };
 
-  res.status(201).json(toJSON(notification));
+  // Broadcast → a single row with NULL recipient (every learner sees it).
+  if (recipients === null) {
+    const notification = await Notification.create({ ...base, recipient_user_id: null });
+    // Fire-and-forget device push; never blocks/skips inbox delivery.
+    pushToAll({ title: base.title, body: base.body }).catch(err =>
+      console.error('[notifications] broadcast push error:', err.message));
+    return res.status(201).json(toJSON(notification));
+  }
+
+  // One or more concrete recipients → one row each (deduped, validated above).
+  const existing = await import('../users/users.models.js').then(m => m.AppUser);
+  const found = await existing.findAll({ where: { id: { [Op.in]: recipients } }, attributes: ['id'] });
+  const valid = new Set(found.map(u => u.id));
+  const missing = recipients.filter(id => !valid.has(id));
+  if (missing.length) throw badRequest(`Unknown user id(s): ${missing.join(', ')}`);
+
+  const rowsCreated = await Notification.bulkCreate(
+    recipients.map(rid => ({ ...base, recipient_user_id: rid })),
+  );
+
+  pushToUsers(recipients, { title: base.title, body: base.body }).catch(
+    (err) => console.error(`[notifications] push error: ${err.message}`));
+
+  // Legacy contract: a single recipient returns a single notification object
+  // (the Learners-page bell modal and older clients read `id`/`broadcast`).
+  if (recipients.length === 1) {
+    return res.status(201).json(toJSON(rowsCreated[0]));
+  }
+
+  res.status(201).json({ sent: rowsCreated.length, notifications: rowsCreated.map(toJSON) });
 });
 
 export const adminList = asyncHandler(async (req, res) => {

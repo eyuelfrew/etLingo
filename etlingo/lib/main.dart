@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'app.dart';
 import 'state/app_state.dart';
 import 'services/auth_service.dart';
+import 'services/push_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  // Wire FCM foreground presentation + (Android 13+) permission before the UI.
+  // Safe no-op on platforms without Firebase Messaging (e.g. Windows desktop).
+  await PushNotificationService.init();
   runApp(
     MultiProvider(
       providers: [

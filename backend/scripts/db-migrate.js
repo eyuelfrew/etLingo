@@ -14,6 +14,7 @@ const { DB_HOST, DB_USER, DB_PASS, DB_NAME } = process.env;
 // Idempotent column additions: [{ table, column, clause }].
 const COLUMNS = [
   { table: 'app_users', column: 'firebase_uid', clause: 'firebase_uid VARCHAR(128) UNIQUE NULL' },
+  { table: 'app_users', column: 'fcm_token', clause: 'fcm_token VARCHAR(255) NULL' },
   { table: 'app_users', column: 'status', clause: "status ENUM('active','banned') NOT NULL DEFAULT 'active'" },
   { table: 'questions', column: 'audio_url', clause: "audio_url VARCHAR(255) NOT NULL DEFAULT ''" },
   { table: 'phrases', column: 'audio_url', clause: "audio_url VARCHAR(255) NOT NULL DEFAULT ''" },

@@ -83,16 +83,6 @@ export default function Dashboard() {
           <span aria-hidden>→</span>
         </Link>
       </div>
-
-      <div className="mt-8 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-        <h2 className="font-black">Getting started</h2>
-        <ol className="mt-3 list-inside list-decimal space-y-1.5 text-sm font-medium text-stone-600">
-          <li>Install MySQL and create the schema: <code className="rounded bg-stone-100 px-1.5 py-0.5">cd backend &amp;&amp; npm run db:init</code></li>
-          <li>Start the API: <code className="rounded bg-stone-100 px-1.5 py-0.5">npm run dev</code> (port 5050)</li>
-          <li>Add languages, units, lessons and questions from the sidebar</li>
-          <li>The Flutter app loads everything via <code className="rounded bg-stone-100 px-1.5 py-0.5">GET /api/v1/app/bootstrap/&lt;code&gt;</code></li>
-        </ol>
-      </div>
     </div>
   );
 }

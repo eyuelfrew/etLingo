@@ -61,12 +61,51 @@ class _LessonScreenState extends State<LessonScreen> {
   bool get _revealed => _feedback != _Feedback.none;
 
   void _playPrompt() {
+    if (_questions.isEmpty || _index >= _questions.length) return;
     final url = _question.audioUrl;
     if (url.isNotEmpty && mounted) AudioService.instance.play(url);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_questions.isEmpty) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.construction_rounded,
+                      size: 58, color: EtColors.locked),
+                  const SizedBox(height: 16),
+                  const Text('No questions yet',
+                      style: TextStyle(
+                          fontSize: 19, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 6),
+                  Text(
+                    '“${widget.lesson.title}” is still being built.\nCheck back soon!',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: EtColors.muted,
+                        height: 1.4),
+                  ),
+                  const SizedBox(height: 22),
+                  EtButton(
+                    'Back to path',
+                    icon: Icons.arrow_back_rounded,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return PopScope(
       canPop: false,
       child: Scaffold(
