@@ -1,7 +1,31 @@
 import { useCallback, useEffect, useState } from 'react';
 import client from '../api/client';
+import { PageHeader, Card, Stat, Badge, Button, EmptyState, Field, inputCls } from '../components/ui';
 
 const emptyForm = { title: '', body: '', type: 'general' };
+
+// Notification categories — must stay in sync with the backend taxonomy in
+// notifications.preferences.js. Each maps to a learner preference toggle, so
+// opted-out learners won't be pushed for that category (in-app inbox still gets
+// the row).
+const CATEGORIES = [
+  ['general', 'General'],
+  ['lesson_reminder', 'Lesson reminder'],
+  ['streak_milestone', 'Streak milestone'],
+  ['achievement', 'Achievement'],
+  ['new_content', 'New content'],
+  ['app_update', 'App update'],
+  ['tip', 'Tip of the day'],
+  ['special_offer', 'Special offer'],
+];
+
+function CategorySelect({ value, onChange }) {
+  return (
+    <select value={value} onChange={onChange} className={inputCls}>
+      {CATEGORIES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+    </select>
+  );
+}
 
 export default function Notifications() {
   const [instant, setInstant] = useState(emptyForm);
@@ -119,210 +143,215 @@ export default function Notifications() {
     }
   };
 
+  const pushOn = learners.filter((u) => u.hasPushToken).length;
+
   return (
-    <div>
-      <div>
-        <h1 className="text-2xl font-black">Notifications</h1>
-        <p className="mt-1 text-sm font-medium text-stone-500">
-          Broadcast instantly, or schedule a campaign that reaches learners in rounds. To message
-          one learner, use the bell icon on their row in Learners.
-        </p>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Engagement"
+        title="Notifications"
+        subtitle="Compose one-off messages or scheduled delivery campaigns. Every message reaches the learner's in-app inbox; device notifications respect each learner's category preferences."
+      />
+
+      {/* Delivery metrics */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="Messages sent" value={rows.length} hint="All-time broadcasts" />
+        <Stat label="Active campaigns" value={campaigns.filter((c) => c.status === 'pending' || c.status === 'running').length} tone="amber" hint="Pending or running" />
+        <Stat label="Registered devices" value={pushOn} tone="sky" hint={`of ${learners.length} learners`} />
+        <Stat label="Push reach" value={`${learners.length ? Math.round((pushOn / Math.max(1, learners.length)) * 100) : 0}%`} tone="green" hint="Learners with a device token" />
       </div>
 
       {error && (
-        <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>
       )}
       {notice && (
-        <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">{notice}</p>
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">{notice}</p>
       )}
 
+      <div className="grid gap-5 xl:grid-cols-2">
+        {/* Compose: instant message */}
+        <Card
+          title="Instant message"
+          description="Delivered to in-app inboxes immediately, with a device notification where permitted."
+        >
+          <form onSubmit={sendInstant} className="grid gap-3.5">
+            <Field label="Title">
+              <input required maxLength={160} value={instant.title} onChange={(e) => setInstant({ ...instant, title: e.target.value })} className={inputCls} placeholder="e.g. New Afaan Oromo unit released" />
+            </Field>
+            <Field label="Category" hint="Learners who opted out of this category won't get a device push.">
+              <CategorySelect value={instant.type} onChange={(e) => setInstant({ ...instant, type: e.target.value })} />
+            </Field>
+            <Field label="Message">
+              <textarea rows={3} maxLength={500} value={instant.body} onChange={(e) => setInstant({ ...instant, body: e.target.value })} className={`${inputCls} resize-y`} placeholder="Keep it short and actionable." />
+            </Field>
 
-      {/* -- Instant broadcast ------------------------------------------------ */}
-      <form onSubmit={sendInstant} className="mt-6 grid gap-4 rounded-2xl border border-stone-200 bg-white p-6">
-        <div className="text-xs font-black uppercase tracking-wider text-stone-400">Instant broadcast</div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Input label="Title *">
-            <input required maxLength={160} value={instant.title} onChange={(e) => setInstant({ ...instant, title: e.target.value })} className={inputCls} />
-          </Input>
-          <Input label="Category">
-            <select value={instant.type} onChange={(e) => setInstant({ ...instant, type: e.target.value })} className={inputCls}>
-              <option value="general">General</option><option value="feature">Feature</option><option value="alert">Alert</option>
-            </select>
-          </Input>
-        </div>
-        <Input label="Message">
-          <textarea rows={3} maxLength={500} value={instant.body} onChange={(e) => setInstant({ ...instant, body: e.target.value })} className={`${inputCls} resize-y`} />
-        </Input>
+        {/* Audience: everyone or a selected subset */}
+            <Field label="Audience">
+              <div className="mt-1.5 inline-flex rounded-lg border border-slate-300 p-0.5">
+                {[
+                  ['everyone', 'All learners'],
+                  ['some', 'Selected'],
+                ].map(([val, label]) => (
+                  <button
+                    type="button"
+                    key={val}
+                    onClick={() => setTargetMode(val)}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                      targetMode === val ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {label}
+                    {val === 'some' && targetIds.length > 0 && (
+                      <span className="ml-1.5 rounded bg-white/20 px-1 tabular-nums">{targetIds.length}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </Field>
 
-        {/* -- Recipients: everyone or a selected subset ---------------------- */}
-        <div>
-          <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">Send to</span>
-          <div className="flex items-center gap-2">
-            {[
-              ['everyone', 'Everyone'],
-              ['some', 'Specific learners'],
-            ].map(([val, label]) => (
-              <button
-                type="button"
-                key={val}
-                onClick={() => setTargetMode(val)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-                  targetMode === val
-                    ? val === 'everyone'
-                      ? 'border-yellow-500 bg-yellow-100 text-yellow-800'
-                      : 'border-green-600 bg-green-100 text-green-800'
-                    : 'border-stone-200 text-stone-500 hover:bg-stone-50'
-                }`}
-              >
-                {label}
-                {val === 'some' && targetIds.length > 0 && (
-                  <span className="ml-1">{targetIds.length}</span>
+            {targetMode === 'some' && (
+              <div>
+                <input value={targetQ} onChange={(e) => setTargetQ(e.target.value)} placeholder="Filter by name or email…" className={inputCls} />
+                {filteredLearners.length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-400">No learners match this filter.</p>
+                ) : (
+                  <div className="mt-2 max-h-52 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
+                    {filteredLearners.map((u) => {
+                      const sel = targetIds.includes(u.id);
+                      return (
+                        <label key={u.id} className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 transition ${sel ? 'bg-slate-50' : 'hover:bg-slate-50/60'}`}>
+                          <input type="checkbox" checked={sel} onChange={() => toggleTarget(u.id)} className="h-4 w-4 rounded accent-slate-900" />
+                          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-700">
+                            {u.displayName || 'Unnamed learner'}
+                          </span>
+                          <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{u.email}</span>
+                          {u.hasPushToken
+                            ? <Badge tone="info">Push on</Badge>
+                            : <Badge>Inbox only</Badge>}
+                        </label>
+                      );
+                    })}
+                  </div>
                 )}
-              </button>
-            ))}
-          </div>
-
-          {targetMode === 'some' && (
-            <div className="mt-3">
-              <input
-                value={targetQ}
-                onChange={(e) => setTargetQ(e.target.value)}
-                placeholder="Search name / email…"
-                className={`${inputCls} !mt-0`}
-              />
-              {filteredLearners.length === 0 && (
-                <p className="mt-2 text-xs font-medium text-stone-400">No learners match.</p>
-              )}
-              <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-stone-200 p-2">
-                {filteredLearners.map((u) => {
-                  const sel = targetIds.includes(u.id);
-                  return (
-                    <label key={u.id} className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition ${sel ? 'bg-green-50' : 'hover:bg-stone-50'}`}>
-                      <input
-                        type="checkbox"
-                        checked={sel}
-                        onChange={() => toggleTarget(u.id)}
-                        className="h-4 w-4 accent-green-700"
-                      />
-                      <span className="min-w-0 truncate font-semibold text-stone-700">
-                        {u.displayName || '—'}
-                      </span>
-                      <span className="ml-auto truncate text-xs font-medium text-stone-400">{u.email}</span>
-                    </label>
-                  );
-                })}
               </div>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <Button variant="primary" type="submit" disabled={targetMode === 'some' && targetIds.length === 0}>
+                {targetMode === 'some' ? `Send to ${targetIds.length} learner${targetIds.length === 1 ? '' : 's'}` : 'Send to all learners'}
+              </Button>
             </div>
-          )}
-        </div>
+          </form>
+        </Card>
 
-        <button type="submit" disabled={targetMode === 'some' && targetIds.length === 0} className="w-fit rounded-xl bg-yellow-500 px-5 py-2.5 text-sm font-bold text-white shadow transition hover:bg-yellow-600 disabled:cursor-not-allowed disabled:opacity-40">
-          {targetMode === 'some'
-            ? `Send to ${targetIds.length || 0} learner(s)`
-            : 'Send broadcast'}
-        </button>
-      </form>
-
-      {/* -- Campaign scheduler ------------------------------------------------ */}
-      <form onSubmit={createCampaign} className="mt-6 grid gap-4 rounded-2xl border border-stone-200 bg-white p-6">
-        <div className="text-xs font-black uppercase tracking-wider text-stone-400">Scheduled campaign</div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Input label="Title *">
-            <input required maxLength={160} value={campaign.title} onChange={(e) => setCampaign({ ...campaign, title: e.target.value })} className={inputCls} />
-          </Input>
-          <Input label="Category">
-            <select value={campaign.type} onChange={(e) => setCampaign({ ...campaign, type: e.target.value })} className={inputCls}>
-              <option value="general">General</option><option value="feature">Feature</option><option value="alert">Alert</option>
-            </select>
-          </Input>
-        </div>
-        <Input label="Message">
-          <textarea rows={3} maxLength={500} value={campaign.body} onChange={(e) => setCampaign({ ...campaign, body: e.target.value })} className={`${inputCls} resize-y`} />
-        </Input>
-        <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
-          <Input label="Audience">
-            <select value={campaign.audience} onChange={(e) => setCampaign({ ...campaign, audience: e.target.value })} className={inputCls}>
-              <option value="active">Active learners</option><option value="all">All learners</option>
-            </select>
-          </Input>
-          <Input label="Batch size">
-            <input type="number" min={1} max={10000} value={campaign.batchSize} onChange={(e) => setCampaign({ ...campaign, batchSize: Number(e.target.value) })} className={inputCls} />
-          </Input>
-          <Input label="Interval (min)">
-            <input type="number" min={1} value={campaign.intervalMinutes} onChange={(e) => setCampaign({ ...campaign, intervalMinutes: Number(e.target.value) })} className={inputCls} />
-          </Input>
-        </div>
-        <button type="submit" className="w-fit self-start rounded-xl bg-yellow-500 px-5 py-2.5 text-sm font-bold text-white shadow transition hover:bg-yellow-600">
-          Schedule campaign
-        </button>
-      </form>
-
-      {/* -- Scheduled campaigns ----------------------------------------------- */}
-      <h2 className="mt-8 text-lg font-black">Scheduled campaigns</h2>
-      <div className="mt-3 space-y-2">
-        {campaigns.length === 0 && (
-          <p className="rounded-xl bg-white p-6 text-center text-sm font-medium text-stone-400">No campaigns yet.</p>
-        )}
-        {campaigns.map((c) => {
-          const active = c.status === 'pending' || c.status === 'running';
-          const tint = c.status === 'completed' ? 'bg-green-100 text-green-800'
-            : c.status === 'cancelled' ? 'bg-stone-200 text-stone-600'
-            : 'bg-yellow-100 text-yellow-800';
-          const pct = Math.min(100, (c.totalSent / Math.max(1, c.batchSize)) * 100);
-          return (
-            <div key={c.id} className="rounded-xl border border-stone-200 bg-white px-4 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-black uppercase ${tint}`}>{c.status}</span>
-                    <span className="truncate text-sm font-bold text-stone-800">{c.title}</span>
-                  </div>
-                  <div className="mt-1 text-xs font-medium text-stone-500">
-                    {c.totalSent} sent · {c.batchSize}/round · every {c.intervalSeconds}s · {c.audience}
-                  </div>
-                  {c.body && <div className="mt-1 truncate text-xs font-medium text-stone-400">{c.body}</div>}
-                  {active && <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-stone-100"><div className="h-full rounded-full bg-green-600 transition-all" style={{ width: `${pct}%` }} /></div>}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {active && (<button onClick={() => cancel(c.id)} className="rounded-lg border border-yellow-300 px-2.5 py-1 text-xs font-bold text-yellow-800 hover:bg-yellow-50">Cancel</button>)}
-                  <button onClick={() => removeCampaign(c.id)} className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-bold text-red-600 hover:bg-red-50">Delete</button>
-                </div>
-              </div>
+        {/* Compose: scheduled campaign */}
+        <Card
+          title="Scheduled campaign"
+          description="Delivered progressively in batches — recommended for large audiences."
+        >
+          <form onSubmit={createCampaign} className="grid gap-3.5">
+            <Field label="Title">
+              <input required maxLength={160} value={campaign.title} onChange={(e) => setCampaign({ ...campaign, title: e.target.value })} className={inputCls} placeholder="e.g. Weekly learning digest" />
+            </Field>
+            <Field label="Category">
+              <CategorySelect value={campaign.type} onChange={(e) => setCampaign({ ...campaign, type: e.target.value })} />
+            </Field>
+            <Field label="Message">
+              <textarea rows={3} maxLength={500} value={campaign.body} onChange={(e) => setCampaign({ ...campaign, body: e.target.value })} className={`${inputCls} resize-y`} />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label="Audience">
+                <select value={campaign.audience} onChange={(e) => setCampaign({ ...campaign, audience: e.target.value })} className={inputCls}>
+                  <option value="active">Active only</option>
+                  <option value="all">All learners</option>
+                </select>
+              </Field>
+              <Field label="Per batch">
+                <input type="number" min={1} max={10000} value={campaign.batchSize} onChange={(e) => setCampaign({ ...campaign, batchSize: Number(e.target.value) })} className={inputCls} />
+              </Field>
+              <Field label="Every (min)">
+                <input type="number" min={1} value={campaign.intervalMinutes} onChange={(e) => setCampaign({ ...campaign, intervalMinutes: Number(e.target.value) })} className={inputCls} />
+              </Field>
             </div>
-          );
-        })}
+            <div className="flex justify-end pt-1">
+              <Button variant="primary" type="submit">Schedule campaign</Button>
+            </div>
+          </form>
+        </Card>
       </div>
 
-      {/* -- Broadcast history ----------------------------------------------- */}
-      <h2 className="mt-8 text-lg font-black">Broadcast history</h2>
-      <div className="mt-3 space-y-2">
-        {rows.length === 0 && (
-          <p className="rounded-xl bg-white p-6 text-center text-sm font-medium text-stone-400">Nothing sent yet.</p>
-        )}
-        {rows.map((n) => (
-          <div key={n.id} className="flex items-center gap-4 rounded-xl border border-stone-200 bg-white px-4 py-3">
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-black uppercase ${n.read ? 'bg-stone-200 text-stone-500' : 'bg-sky-100 text-sky-800'}`}>
-              {n.read ? 'read' : 'new'}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-bold text-stone-800">{n.title}</div>
-              {n.body && <div className="truncate text-xs font-medium text-stone-500">{n.body}</div>}
-            </div>
-            <button onClick={() => removeNotif(n.id)} className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-bold text-red-600 hover:bg-red-50">Delete</button>
+      {/* Campaign queue */}
+      <Card title="Campaign queue" description="Scheduled deliveries and their progress.">
+        {campaigns.length === 0 ? (
+          <EmptyState title="No campaigns scheduled" hint="Create one above to deliver a message progressively." />
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {campaigns.map((c) => {
+              const active = c.status === 'pending' || c.status === 'running';
+              const tone = c.status === 'completed' ? 'success'
+                : c.status === 'cancelled' ? 'neutral'
+                : 'warning';
+              const pct = Math.min(100, (c.totalSent / Math.max(1, c.batchSize)) * 100);
+              return (
+                <div key={c.id} className="flex items-start justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={tone} dot>{c.status}</Badge>
+                      <p className="truncate text-[13px] font-medium text-slate-800">{c.title}</p>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {c.totalSent} delivered · {c.batchSize} per batch · {Math.round(c.intervalSeconds / 60)} min interval · {c.audience === 'active' ? 'active learners' : 'all learners'}
+                    </p>
+                    {active && (
+                      <div className="mt-2 h-1 w-full max-w-sm overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {active && <Button onClick={() => cancel(c.id)}>Cancel</Button>}
+                    <Button variant="danger" onClick={() => removeCampaign(c.id)}>Delete</Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        )}
+      </Card>
+
+      {/* Delivery log */}
+      <Card title="Delivery log" description="Messages already dispatched to learners.">
+        {rows.length === 0 ? (
+          <EmptyState title="Nothing sent yet" hint="Your message history appears here after your first send." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-400">
+                  <th className="py-2 pr-4 font-semibold">Status</th>
+                  <th className="py-2 pr-4 font-semibold">Title</th>
+                  <th className="py-2 pr-4 font-semibold">Message</th>
+                  <th className="py-2 text-right font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {rows.map((n) => (
+                  <tr key={n.id} className="align-top">
+                    <td className="py-2.5 pr-4">
+                      {n.read ? <Badge>Read</Badge> : <Badge tone="info" dot>New</Badge>}
+                    </td>
+                    <td className="py-2.5 pr-4 font-medium text-slate-800">{n.title}</td>
+                    <td className="max-w-sm py-2.5 pr-4 text-slate-500">{n.body || '—'}</td>
+                    <td className="py-2.5 text-right">
+                      <Button variant="danger" onClick={() => removeNotif(n.id)}>Delete</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
-  );
-}
-
-const inputCls = 'mt-1 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm font-medium outline-none focus:border-yellow-500';
-
-function Input({ label, children }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">{label}</span>
-      {children}
-    </label>
   );
 }

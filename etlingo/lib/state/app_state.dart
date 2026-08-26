@@ -121,6 +121,48 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Re-fetch the current language's units/lessons/questions from the backend.
+  ///
+  /// Content is cached in memory after the initial load, so lessons and
+  /// questions published by admins afterwards never appeared until the learner
+  /// re-picked the language or reinstalled. Call this from pull-to-refresh
+  /// (and anywhere freshness matters). Progress is untouched — completed
+  /// lesson ids live separately.
+  Future<bool> refreshLanguage() async {
+    final code = _language.id;
+    if (code.isEmpty || _loadingContent) return false;
+
+    _loadingContent = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final fresh = await _content.loadLanguageContent(code);
+      if (!mounted) return false; // guard below via hasListeners pattern
+      if (fresh != null && fresh.id == code) {
+        _language = fresh;
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    } finally {
+      _loadingContent = false;
+      notifyListeners();
+    }
+  }
+
+  bool get mounted => !_disposed;
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   /// Pick a language, then pull its full admin-managed course content.
   Future<void> chooseLanguage(Language lang) async {
     _language = lang;

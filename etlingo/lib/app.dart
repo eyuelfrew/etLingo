@@ -9,12 +9,17 @@ import 'features/onboarding/onboarding_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'state/app_state.dart';
 
+/// Global navigator so notification-tap handlers (firebase_messaging streams,
+/// which can fire outside a BuildContext) can reliably open a screen.
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
 class EtLangApp extends StatelessWidget {
   const EtLangApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       title: 'ኢትLang — Learn Ethiopian Languages',
       debugShowCheckedModeBanner: false,
       theme: buildEtTheme(),

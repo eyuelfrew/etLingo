@@ -9,6 +9,7 @@ import { requestLogger } from './core/logger.js';
 import { checkStatus, logStatus, getMysqlStatus, getRedisStatus } from './core/status.js';
 import { getFirebaseStatus } from './core/firebase.js';
 import { startCampaignWorker } from './modules/notifications/notifications.runner.js';
+import { logFcmAvailability } from './modules/notifications/notifications.push.js';
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.listen(PORT, async () => {
   console.log('==========================================');
   await checkStatus();
   logStatus();
+  logFcmAvailability();
   setInterval(async () => { await checkStatus(); }, 30_000);
 
   // Campaign worker — delivers scheduled notification rounds to learners.

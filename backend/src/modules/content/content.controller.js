@@ -1,4 +1,7 @@
 import { Language, Unit, Lesson, Question, Phrase } from './content.models.js';
+// Explicit cross-module handover: publishing content announces itself to
+// learners through the notifications module's service (never its tables).
+import { announceNewContent, isPublished } from '../notifications/notifications.events.js';
 
 function pick(obj, fields) {
   const out = {};
@@ -6,7 +9,7 @@ function pick(obj, fields) {
   return out;
 }
 
-function makeCrud(Model, fields, jsonFields = []) {
+function makeCrud(Model, fields, jsonFields = [], hooks = {}) {
   return {
     async list(req, res) {
       const where = {};
@@ -27,6 +30,11 @@ function makeCrud(Model, fields, jsonFields = []) {
     async create(req, res) {
       const data = pick(req.body, [...fields, ...jsonFields]);
       const row = await Model.create(data);
+      // Announce learner-facing publications without blocking the response.
+      if (hooks.afterCreate) {
+        Promise.resolve(hooks.afterCreate(row)).catch((err) =>
+          console.error(`[content] publish announcement failed: ${err.message}`));
+      }
       res.status(201).json(row);
     },
 
@@ -49,10 +57,36 @@ function makeCrud(Model, fields, jsonFields = []) {
 
 const languages = makeCrud(Language,
   ['code', 'name', 'native_name', 'script_preview', 'speakers', 'region', 'color_hex', 'dark_hex', 'hello_target', 'hello_meaning', 'icon', 'sort_order', 'is_active'],
+  [],
+  {
+    // New course went live → tell every learner (respects `new_content` opt-outs).
+    afterCreate: async (row) => {
+      if (!isPublished(row)) return;
+      const name = row.native_name || row.name;
+      await announceNewContent({
+        title: `New language available: ${name}`,
+        body: `${name} (${row.name}) just landed on EtLingo. ${row.hello_meaning ? `Start with "${row.hello_target || ''}" — ${row.hello_meaning}.` : 'Open the app to start your first lesson.'}`.trim(),
+      });
+    },
+  },
 );
 
 const units = makeCrud(Unit, ['language_id', 'title', 'subtitle', 'color_hex', 'dark_hex', 'icon', 'sort_order']);
-const lessons = makeCrud(Lesson, ['unit_id', 'title', 'is_boss', 'xp_reward', 'sort_order']);
+
+const lessons = makeCrud(Lesson, ['unit_id', 'title', 'is_boss', 'xp_reward', 'sort_order'], [], {
+  // New lesson published → announce it with its language for context.
+  afterCreate: async (row) => {
+    const unit = await Unit.findByPk(row.unit_id);
+    const lang = unit ? await Language.findByPk(unit.language_id) : null;
+    const langName = lang ? (lang.native_name || lang.name) : '';
+    await announceNewContent({
+      title: `New lesson: ${row.title}`,
+      body: langName
+        ? `A fresh lesson "${row.title}" is now live in the ${langName} course. Earn ${row.xp_reward ?? 10} XP — jump in!`
+        : `A fresh lesson "${row.title}" is now live. Jump in and earn ${row.xp_reward ?? 10} XP!`,
+    });
+  },
+});
 const questions = makeCrud(Question,
   ['lesson_id', 'kind', 'prompt', 'sub_prompt', 'hint', 'options', 'answer_index', 'match_left', 'match_right', 'audio_url', 'sort_order'],
   ['options', 'match_left', 'match_right'],

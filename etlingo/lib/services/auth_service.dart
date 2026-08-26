@@ -223,6 +223,21 @@ class AuthService extends ChangeNotifier {
     await _api.post('/app/notifications/$id/read');
   }
 
+  /// Load this learner's notification opt-in/out settings.
+  Future<AppNotificationPrefs> fetchNotificationPrefs() async {
+    final data = await _api.get('/app/notifications/preferences');
+    if (data is! Map<String, dynamic>) return const AppNotificationPrefs();
+    return AppNotificationPrefs.fromJson(data);
+  }
+
+  /// Persist a change to the learner's notification settings.
+  Future<AppNotificationPrefs> saveNotificationPrefs(
+      AppNotificationPrefs prefs) async {
+    final data = await _api.put('/app/notifications/preferences', body: prefs.toJson());
+    if (data is! Map<String, dynamic>) return prefs;
+    return AppNotificationPrefs.fromJson(data);
+  }
+
   Future<void> signOut() async {
     // Deregister this device from push before we drop the session token.
     await unregisterPushToken();

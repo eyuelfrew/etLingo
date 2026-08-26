@@ -68,6 +68,20 @@ const TABLES = {
     CONSTRAINT fk_cr_campaign FOREIGN KEY (campaign_id)
       REFERENCES notification_campaigns(id) ON DELETE CASCADE
   ) ENGINE=InnoDB;`,
+  notification_preferences: `CREATE TABLE IF NOT EXISTS notification_preferences (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL UNIQUE,
+    push_enabled TINYINT(1) NOT NULL DEFAULT 1,
+    lesson_reminders TINYINT(1) NOT NULL DEFAULT 1,
+    streak_milestones TINYINT(1) NOT NULL DEFAULT 1,
+    achievements TINYINT(1) NOT NULL DEFAULT 1,
+    new_content TINYINT(1) NOT NULL DEFAULT 1,
+    app_updates TINYINT(1) NOT NULL DEFAULT 1,
+    tips TINYINT(1) NOT NULL DEFAULT 1,
+    promotions TINYINT(1) NOT NULL DEFAULT 0,
+    CONSTRAINT fk_np_user FOREIGN KEY (user_id)
+      REFERENCES app_users(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB;`,
 };
 
 async function tableExists(conn, table) {

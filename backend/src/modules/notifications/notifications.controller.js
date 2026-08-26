@@ -2,6 +2,7 @@ import { Op } from 'sequelize';
 import { Notification, Campaign, CampaignRecipient } from './notifications.models.js';
 import { asyncHandler, badRequest, notFound } from '../../core/http.js';
 import { pushToUsers, pushToAll } from './notifications.push.js';
+import { fcmLog } from './notifications.fcm-log.js';
 
 function toJSON(n) {
   return {
@@ -54,9 +55,10 @@ export const send = asyncHandler(async (req, res) => {
 
   // Broadcast → a single row with NULL recipient (every learner sees it).
   if (recipients === null) {
+    fcmLog(`[send] BROADCAST "${base.title}" (${base.type}) to all learners`);
     const notification = await Notification.create({ ...base, recipient_user_id: null });
     // Fire-and-forget device push; never blocks/skips inbox delivery.
-    pushToAll({ title: base.title, body: base.body }).catch(err =>
+    pushToAll({ title: base.title, body: base.body, type: base.type, context: 'broadcast' }).catch(err =>
       console.error('[notifications] broadcast push error:', err.message));
     return res.status(201).json(toJSON(notification));
   }
@@ -68,12 +70,19 @@ export const send = asyncHandler(async (req, res) => {
   const missing = recipients.filter(id => !valid.has(id));
   if (missing.length) throw badRequest(`Unknown user id(s): ${missing.join(', ')}`);
 
+  fcmLog(`[send] "${title}" → ${recipients.length} specific user(s): [${recipients.join(', ')}]`);
+
   const rowsCreated = await Notification.bulkCreate(
     recipients.map(rid => ({ ...base, recipient_user_id: rid })),
   );
 
-  pushToUsers(recipients, { title: base.title, body: base.body }).catch(
-    (err) => console.error(`[notifications] push error: ${err.message}`));
+  pushToUsers(
+    recipients,
+    {
+      title: base.title, body: base.body, type: base.type,
+      context: recipients.length === 1 ? 'single' : 'bulk',
+    },
+  ).catch(err => console.error('[notifications] push error:', err.message));
 
   // Legacy contract: a single recipient returns a single notification object
   // (the Learners-page bell modal and older clients read `id`/`broadcast`).

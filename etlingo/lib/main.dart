@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'app.dart';
 import 'state/app_state.dart';
+import 'features/notifications/notifications_screen.dart';
 import 'services/auth_service.dart';
 import 'services/push_notification_service.dart';
 
@@ -21,7 +22,14 @@ void main() async {
   );
   // Wire FCM foreground presentation + (Android 13+) permission before the UI.
   // Safe no-op on platforms without Firebase Messaging (e.g. Windows desktop).
-  await PushNotificationService.init();
+  // onOpen navigates to the notifications screen when a tray notification is tapped.
+  await PushNotificationService.init(
+    onOpen: (_) {
+      appNavigatorKey.currentState?.push(
+        MaterialPageRoute<void>(builder: (_) => const NotificationsScreen()),
+      );
+    },
+  );
   runApp(
     MultiProvider(
       providers: [

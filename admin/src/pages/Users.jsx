@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import client from '../api/client';
+import { PageHeader, Badge } from '../components/ui';
 
 const emptyForm = { email: '', display_name: '', password: '', xp: 0, hearts: 5, streak: 0, status: 'active' };
 const iconBtn = 'flex h-8 w-8 items-center justify-center rounded-lg border text-xs transition disabled:opacity-40';
@@ -107,14 +108,13 @@ export default function Users() {
   };
 
   return (
-    <div>
+    <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black">Learners</h1>
-          <p className="mt-1 text-sm font-medium text-stone-500">
-            Full control: create, edit, inspect, notify, ban or remove accounts
-          </p>
-        </div>
+        <PageHeader
+          eyebrow="Audience"
+          title="Learners"
+          subtitle="Create, inspect and manage learner accounts — including device push registration status."
+        />
         <div className="flex flex-wrap items-center gap-2">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name / email…"
             className="w-52 rounded-xl border border-stone-300 px-3 py-2 text-sm font-medium outline-none focus:border-green-700" />
@@ -146,12 +146,13 @@ export default function Users() {
               <th className="px-4 py-3">Streak</th>
               <th className="px-4 py-3">Lessons</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Push</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-10 text-center font-medium text-stone-400">No learners found.</td></tr>
+              <tr><td colSpan={9} className="px-4 py-10 text-center font-medium text-stone-400">No learners found.</td></tr>
             )}
             {rows.map((u) => (
               <tr key={u.id} className="border-t border-stone-100 hover:bg-stone-50/60">
@@ -165,9 +166,12 @@ export default function Users() {
                 <td className="px-4 py-3">{u.streak}</td>
                 <td className="px-4 py-3">{u.lessonsDone ?? 0}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${u.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
-                    {u.status}
-                  </span>
+                  <Badge tone={u.status === 'active' ? 'success' : 'danger'} dot>{u.status}</Badge>
+                </td>
+                <td className="px-4 py-3">
+                  {u.hasPushToken
+                    ? <Badge tone="info">Device registered</Badge>
+                    : <Badge>Inbox only</Badge>}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1.5">
@@ -273,10 +277,17 @@ export default function Users() {
       {notifyFor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4" onClick={() => setNotifyFor(null)}>
           <form onSubmit={sendDirect} onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="font-black">Notify {notifyFor.displayName || notifyFor.email}</h2>
-            <p className="mt-1 text-xs font-medium text-stone-500">Delivered only to this learner's in-app inbox.</p>
+            <h2 className="font-semibold text-slate-900">Message {notifyFor.displayName || notifyFor.email}</h2>
+            <p className="mt-1 text-xs font-medium text-slate-500">
+              This message is delivered to the learner's in-app inbox.
+            </p>
+            <p className={`mt-1.5 rounded-lg px-3 py-2 text-xs font-medium ${notifyFor.hasPushToken ? 'bg-sky-50 text-sky-800' : 'bg-amber-50 text-amber-800'}`}>
+              {notifyFor.hasPushToken
+                ? 'Device notification: enabled — the learner will also receive a system push.'
+                : 'Device notification: unavailable — no registered device. Visible in the in-app inbox only.'}
+            </p>
             <div className="mt-4 grid gap-3">
-              <Field label="Title *">
+              <Field label="Title">
                 <input required maxLength={160} value={notifyMsg.title} onChange={(e) => setNotifyMsg({ ...notifyMsg, title: e.target.value })} className={inputCls} />
               </Field>
               <Field label="Message">
@@ -284,8 +295,8 @@ export default function Users() {
               </Field>
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" onClick={() => setNotifyFor(null)} className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-bold text-stone-600 hover:bg-stone-50">Cancel</button>
-              <button type="submit" disabled={busyId === notifyFor.id} className="rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white shadow hover:bg-amber-600 disabled:opacity-50">Send</button>
+              <Button type="button" onClick={() => setNotifyFor(null)}>Cancel</Button>
+              <Button variant="primary" type="submit" disabled={busyId === notifyFor.id}>Send message</Button>
             </div>
           </form>
         </div>

@@ -70,8 +70,13 @@ export async function processDueCampaigns() {
     }
 
     // Best-effort device push for this round's learners.
-    pushToUsers(recipients.map(u => u.id), { title: campaign.title, body: campaign.body }).catch(
-      (err) => console.error(`[campaign] push error: ${err.message}`));
+    pushToUsers(
+      recipients.map(u => u.id),
+      {
+        title: campaign.title, body: campaign.body, type: campaign.type,
+        context: `campaign#${campaign.id}`,
+      },
+    ).catch(err => console.error(`[campaign] push error: ${err.message}`));
 
     await campaign.increment('total_sent', { by: recipients.length });
     await campaign.update({

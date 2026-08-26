@@ -60,3 +60,72 @@ class AppNotification {
             j['createdAt'] is String ? DateTime.tryParse(j['createdAt'] as String) : null,
       );
 }
+
+/// Per-learner notification opt-outs, mirrored from the backend
+/// (`GET/PUT /app/notifications/preferences`). `promotions` defaults to off on
+/// the server; everything else defaults to on.
+class AppNotificationPrefs {
+  final bool pushEnabled;
+  final bool lessonReminders;
+  final bool streakMilestones;
+  final bool achievements;
+  final bool newContent;
+  final bool appUpdates;
+  final bool tips;
+  final bool promotions;
+
+  const AppNotificationPrefs({
+    this.pushEnabled = true,
+    this.lessonReminders = true,
+    this.streakMilestones = true,
+    this.achievements = true,
+    this.newContent = true,
+    this.appUpdates = true,
+    this.tips = true,
+    this.promotions = false,
+  });
+
+  factory AppNotificationPrefs.fromJson(Map<String, dynamic> j) =>
+      AppNotificationPrefs(
+        pushEnabled: j['pushEnabled'] != false,
+        lessonReminders: j['lessonReminders'] != false,
+        streakMilestones: j['streakMilestones'] != false,
+        achievements: j['achievements'] != false,
+        newContent: j['newContent'] != false,
+        appUpdates: j['appUpdates'] != false,
+        tips: j['tips'] != false,
+        promotions: j['promotions'] == true,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'pushEnabled': pushEnabled,
+        'lessonReminders': lessonReminders,
+        'streakMilestones': streakMilestones,
+        'achievements': achievements,
+        'newContent': newContent,
+        'appUpdates': appUpdates,
+        'tips': tips,
+        'promotions': promotions,
+      };
+
+  AppNotificationPrefs copyWith({
+    bool? pushEnabled,
+    bool? lessonReminders,
+    bool? streakMilestones,
+    bool? achievements,
+    bool? newContent,
+    bool? appUpdates,
+    bool? tips,
+    bool? promotions,
+  }) =>
+      AppNotificationPrefs(
+        pushEnabled: pushEnabled ?? this.pushEnabled,
+        lessonReminders: lessonReminders ?? this.lessonReminders,
+        streakMilestones: streakMilestones ?? this.streakMilestones,
+        achievements: achievements ?? this.achievements,
+        newContent: newContent ?? this.newContent,
+        appUpdates: appUpdates ?? this.appUpdates,
+        tips: tips ?? this.tips,
+        promotions: promotions ?? this.promotions,
+      );
+}

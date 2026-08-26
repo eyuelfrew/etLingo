@@ -15,6 +15,8 @@ function toUser(u) {
     streak: u.streak,
     lastActiveDate: u.last_active_date,
     createdAt: u.created_at,
+    // True when this learner's device registered a push token with us.
+    hasPushToken: !!u.fcm_token,
   };
 }
 
@@ -35,7 +37,9 @@ export const registerFcmToken = asyncHandler(async (req, res) => {
   if (!fcmToken || !String(fcmToken).trim()) throw badRequest('fcmToken is required');
   if (String(fcmToken).length > 255) throw badRequest('fcmToken is too long');
 
-  await user.update({ fcm_token: String(fcmToken).trim() });
+  const clean = String(fcmToken).trim();
+  await user.update({ fcm_token: clean });
+  console.log(`[FCM] user #${user.id} (${user.email || '?'}) registered device token ${clean.slice(0, 6)}•••${clean.slice(-6)}`);
   res.json({ ok: true });
 });
 
@@ -43,7 +47,13 @@ export const registerFcmToken = asyncHandler(async (req, res) => {
 export const unregisterFcmToken = asyncHandler(async (req, res) => {
   const user = await AppUser.findByPk(req.auth.sub);
   if (!user) throw unauthorized('User not found');
+  const had = user.fcm_token;
   await user.update({ fcm_token: null });
+  if (had) {
+    console.log(`[FCM] user #${user.id} (${user.email || '?'}) removed device token ${had.slice(0, 6)}•••${had.slice(-6)}`);
+  } else {
+    console.log(`[FCM] user #${user.id} (${user.email || '?'}) sign-out — no token was set`);
+  }
   res.json({ ok: true });
 });
 

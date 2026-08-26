@@ -125,3 +125,19 @@ CREATE TABLE IF NOT EXISTS lesson_progress (
   FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
   UNIQUE KEY uq_user_lesson (app_user_id, lesson_id)
 ) ENGINE=InnoDB;
+
+-- Per-learner notification opt-outs (rows are created lazily by the API).
+CREATE TABLE IF NOT EXISTS notification_preferences (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL UNIQUE,
+  push_enabled TINYINT(1) NOT NULL DEFAULT 1,
+  lesson_reminders TINYINT(1) NOT NULL DEFAULT 1,
+  streak_milestones TINYINT(1) NOT NULL DEFAULT 1,
+  achievements TINYINT(1) NOT NULL DEFAULT 1,
+  new_content TINYINT(1) NOT NULL DEFAULT 1,
+  app_updates TINYINT(1) NOT NULL DEFAULT 1,
+  tips TINYINT(1) NOT NULL DEFAULT 1,
+  promotions TINYINT(1) NOT NULL DEFAULT 0,
+  CONSTRAINT fk_np_user FOREIGN KEY (user_id)
+    REFERENCES app_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

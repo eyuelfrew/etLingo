@@ -17,10 +17,20 @@ class LearnPathScreen extends StatelessWidget {
       bottom: false,
       child: AnimatedBuilder(
         animation: state,
-        builder: (context, _) => CustomScrollView(
-          slivers: [
-            const SliverToBoxAdapter(child: SizedBox(height: 12)),
-            SliverToBoxAdapter(child: _header(context)),
+        builder: (context, _) => RefreshIndicator(
+          // Re-fetches units/lessons/questions from the backend so content
+          // published by admins appears without restarting the app.
+          onRefresh: () => state.refreshLanguage(),
+          color: EtColors.green,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              if (state.loadingContent)
+                const SliverToBoxAdapter(
+                  child: LinearProgressIndicator(minHeight: 2, color: EtColors.green),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              SliverToBoxAdapter(child: _header(context)),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -50,6 +60,7 @@ class LearnPathScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

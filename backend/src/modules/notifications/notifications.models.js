@@ -54,3 +54,29 @@ export const CampaignRecipient = sequelize.define('CampaignRecipient', {
   createdAt: 'sent_at',
   updatedAt: false,
 });
+
+// Per-learner notification opt-outs. One row per app user, created lazily with
+// sensible defaults on first read — so no backfill migration is needed.
+//
+// Cross-module note: user_id references the users module's app_users by plain
+// id only (same rule as notifications.recipient_user_id).
+export const NotificationPreference = sequelize.define('NotificationPreference', {
+  id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+  user_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, unique: true },
+
+  // Master switch — when false nothing is pushed to this learner's device.
+  push_enabled: { type: DataTypes.BOOLEAN, defaultValue: true, allowNull: false },
+
+  // Learning & progress
+  lesson_reminders: { type: DataTypes.BOOLEAN, defaultValue: true, allowNull: false },
+  streak_milestones: { type: DataTypes.BOOLEAN, defaultValue: true, allowNull: false },
+  achievements: { type: DataTypes.BOOLEAN, defaultValue: true, allowNull: false },
+
+  // Content & product updates
+  new_content: { type: DataTypes.BOOLEAN, defaultValue: true, allowNull: false },
+  app_updates: { type: DataTypes.BOOLEAN, defaultValue: true, allowNull: false },
+  tips: { type: DataTypes.BOOLEAN, defaultValue: true, allowNull: false },
+
+  // Engagement / marketing
+  promotions: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: false },
+}, { tableName: 'notification_preferences', timestamps: false });

@@ -6,6 +6,7 @@ import '../../core/widgets/tibeb_band.dart';
 import '../../services/auth_service.dart';
 import '../../state/app_state.dart';
 import '../notifications/notifications_screen.dart';
+import '../notifications/notification_settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final AppState state;
@@ -316,6 +317,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                     builder: (_) => const NotificationsScreen()),
+              ),
+            ),
+            const SizedBox(height: 10),
+            EtButton(
+              'Notification settings',
+              icon: Icons.tune_rounded,
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                    builder: (_) => const NotificationSettingsScreen()),
               ),
             ),
             const SizedBox(height: 10),

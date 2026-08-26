@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import client from '../api/client';
+import { PageHeader } from '../components/ui';
 
 const cards = [
   ['languages', 'Languages', '🗣', 'bg-green-100 text-green-800'],
@@ -32,10 +33,11 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-black">Dashboard</h1>
-      <p className="mt-1 text-sm font-medium text-stone-500">
-        Content overview across all Ethiopian languages
-      </p>
+      <PageHeader
+        eyebrow="Overview"
+        title="Dashboard"
+        subtitle="Content coverage and audience health across all supported Ethiopian languages."
+      />
 
       {error && (
         <p className="mt-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
