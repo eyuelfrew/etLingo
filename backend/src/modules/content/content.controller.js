@@ -1,4 +1,4 @@
-import { Language, Unit, Lesson, Question, Phrase } from './content.models.js';
+import { Language, Unit, Lesson, Question, Phrase, BaseLanguage } from './content.models.js';
 // Explicit cross-module handover: publishing content announces itself to
 // learners through the notifications module's service (never its tables).
 import { announceNewContent, isPublished } from '../notifications/notifications.events.js';
@@ -73,7 +73,7 @@ const languages = makeCrud(Language,
 
 const units = makeCrud(Unit, ['language_id', 'title', 'subtitle', 'color_hex', 'dark_hex', 'icon', 'sort_order']);
 
-const lessons = makeCrud(Lesson, ['unit_id', 'title', 'is_boss', 'xp_reward', 'sort_order'], [], {
+const lessons = makeCrud(Lesson, ['unit_id', 'title', 'is_boss', 'xp_reward', 'sort_order'], ['teach_content'], {
   // New lesson published → announce it with its language for context.
   afterCreate: async (row) => {
     const unit = await Unit.findByPk(row.unit_id);
@@ -89,7 +89,7 @@ const lessons = makeCrud(Lesson, ['unit_id', 'title', 'is_boss', 'xp_reward', 's
 });
 const questions = makeCrud(Question,
   ['lesson_id', 'kind', 'prompt', 'sub_prompt', 'hint', 'options', 'answer_index', 'match_left', 'match_right', 'audio_url', 'sort_order'],
-  ['options', 'match_left', 'match_right'],
+  ['options', 'match_left', 'match_right', 'content'],
 );
 const phrases = makeCrud(Phrase, ['language_id', 'target', 'translit', 'meaning', 'category', 'audio_url', 'sort_order']);
 
@@ -103,7 +103,9 @@ export async function dashboardStats(_req, res) {
   });
 }
 
-export { languages, units, lessons, questions, phrases };
+const baseLanguages = makeCrud(BaseLanguage, ['code', 'name', 'native_name', 'is_active', 'sort_order']);
+
+export { languages, units, lessons, questions, phrases, baseLanguages };
 
 // ── Public app-facing content ─────────────────────────────────────────────────
 
@@ -180,14 +182,21 @@ export async function bootstrap(req, res) {
 
   const lessonsOut = lessonsList.map(l => {
     const r = l.toJSON();
-    return { ...r, isBoss: r.is_boss, xpReward: r.xp_reward, unitId: r.unit_id };
+    return {
+      ...r,
+      isBoss: r.is_boss,
+      xpReward: r.xp_reward,
+      teachContent: r.teach_content || [],
+      unitId: r.unit_id,
+    };
   });
-  lessonsOut.forEach(l => { delete l.is_boss; delete l.xp_reward; delete l.unit_id; delete l.sort_order; delete l.created_at; });
+  lessonsOut.forEach(l => { delete l.is_boss; delete l.xp_reward; delete l.teach_content; delete l.unit_id; delete l.sort_order; delete l.created_at; });
 
   const questionsOut = questionsList.map(q => {
     const r = q.toJSON();
     return {
       ...r,
+      content: r.content || {},
       subPrompt: r.sub_prompt || '',
       answerIndex: r.answer_index,
       matchLeft: r.match_left,
@@ -216,4 +225,15 @@ export async function languagePhrases(req, res) {
     order: [['sort_order', 'ASC'], ['id', 'ASC']],
   });
   res.json(list);
+}
+
+export async function appBaseLanguages(_req, res) {
+  const rows = await BaseLanguage.findAll({
+    where: { is_active: true },
+    order: [['sort_order', 'ASC'], ['id', 'ASC']],
+  });
+  res.json(rows.map(l => {
+    const j = l.toJSON();
+    return { id: j.code, name: j.name, nativeName: j.native_name };
+  }));
 }

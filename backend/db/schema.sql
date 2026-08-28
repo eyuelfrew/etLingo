@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS lessons (
   title VARCHAR(160) NOT NULL,
   is_boss TINYINT(1) NOT NULL DEFAULT 0,
   xp_reward INT NOT NULL DEFAULT 10,
+  teach_content JSON NULL,
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE CASCADE
@@ -61,6 +62,7 @@ CREATE TABLE IF NOT EXISTS questions (
   prompt VARCHAR(300) NOT NULL,
   sub_prompt VARCHAR(300) DEFAULT '',
   hint VARCHAR(160) DEFAULT '',
+  content JSON NULL,
   options JSON NULL,
   answer_index INT DEFAULT -1,
   match_left JSON NULL,
@@ -140,4 +142,14 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
   promotions TINYINT(1) NOT NULL DEFAULT 0,
   CONSTRAINT fk_np_user FOREIGN KEY (user_id)
     REFERENCES app_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS base_languages (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(8) NOT NULL UNIQUE,
+  name VARCHAR(80) NOT NULL,
+  native_name VARCHAR(120) NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;

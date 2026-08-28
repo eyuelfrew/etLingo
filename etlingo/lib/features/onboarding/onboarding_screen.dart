@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/tibeb_band.dart';
 
@@ -153,18 +154,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
 // ── Page 1 · The Land of Origins — Ethiopian map hero ─────────────────────────
 
-/// Simplified Ethiopia boundary in raw lon/lat pairs, drawn clockwise.
-/// Normalized at paint time so it scales to any screen.
-const List<(double, double)> kEthiopiaBorder = [
-  (36.5, 14.3), (37.6, 14.9), (38.5, 14.7), (39.1, 14.5), (40.0, 14.5),
-  (40.9, 14.4), (41.8, 13.9), (42.4, 12.5), (42.0, 12.0), (42.6, 11.0),
-  (43.3, 10.7), (44.0, 10.4), (45.5, 9.5), (46.9, 8.2), (48.0, 8.0),
-  (46.6, 6.9), (45.0, 5.0), (43.0, 4.8), (41.9, 3.9), (40.8, 4.3),
-  (39.5, 3.4), (38.0, 3.6), (36.9, 4.4), (36.0, 4.45), (35.5, 5.0),
-  (34.7, 6.6), (33.2, 7.8), (33.0, 8.4), (34.1, 9.5), (34.3, 10.9),
-  (35.1, 11.8), (35.6, 12.6), (36.1, 13.0),
-];
-
 class _MapPage extends StatelessWidget {
   const _MapPage();
 
@@ -197,7 +186,10 @@ class _MapPage extends StatelessWidget {
           SizedBox(
             height: 260,
             width: double.infinity,
-            child: CustomPaint(painter: _EthiopiaMapPainter()),
+            child: SvgPicture.asset(
+              'assets/et.svg',
+              fit: BoxFit.contain,
+            ),
           ),
           const SizedBox(height: 22),
           const Text(
@@ -227,90 +219,6 @@ class _MapPage extends StatelessWidget {
       ),
     );
   }
-}
-
-class _EthiopiaMapPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bounds = _geoBounds();
-    Offset project(double lon, double lat) => Offset(
-          ((lon - bounds.$1) / (bounds.$2 - bounds.$1)) * size.width,
-          (1 - (lat - bounds.$3) / (bounds.$4 - bounds.$3)) * size.height,
-        );
-
-    final path = Path();
-    for (var i = 0; i < kEthiopiaBorder.length; i++) {
-      final p = project(kEthiopiaBorder[i].$1, kEthiopiaBorder[i].$2);
-      if (i == 0) {
-        path.moveTo(p.dx, p.dy);
-      } else {
-        path.lineTo(p.dx, p.dy);
-      }
-    }
-    path.close();
-
-    // Soft outer glow.
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = EtColors.green.withValues(alpha: 0.30)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 26),
-    );
-    // Land fill with a subtle vertical sheen.
-    canvas.drawPath(
-      path,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF1E9C4E).withValues(alpha: 0.85),
-            const Color(0xFF0B5B29).withValues(alpha: 0.85),
-          ],
-        ).createShader(Offset.zero & size),
-    );
-    // Crisp border.
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = EtColors.yellow.withValues(alpha: 0.9)
-        ..strokeJoin = StrokeJoin.round,
-    );
-
-    // Addis Ababa marker.
-    final addis = project(38.74, 9.03);
-    canvas.drawCircle(addis, 9,
-        Paint()..color = EtColors.yellow.withValues(alpha: 0.25));
-    canvas.drawCircle(addis, 4, Paint()..color = EtColors.yellow);
-    canvas.drawCircle(addis, 4,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5
-          ..color = const Color(0xFF04150C));
-
-    // Region dots for the featured languages.
-    const cities = [(38.0, 11.6), (39.0, 8.5), (39.5, 13.5), (43.5, 9.0)];
-    for (final (lon, lat) in cities) {
-      canvas.drawCircle(project(lon, lat), 3,
-          Paint()..color = Colors.white.withValues(alpha: 0.75));
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-(double, double, double, double) _geoBounds() {
-  var minLon = 999.0, maxLon = -999.0, minLat = 999.0, maxLat = -999.0;
-  for (final (lon, lat) in kEthiopiaBorder) {
-    if (lon < minLon) minLon = lon;
-    if (lon > maxLon) maxLon = lon;
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
-  }
-  return (minLon, maxLon, minLat, maxLat);
 }
 
 // ── Page 2 · Birthplace of Coffee — languages & heritage ──────────────────────

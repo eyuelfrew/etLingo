@@ -8,12 +8,16 @@ const KINDS = [
   { value: 'listen', name: 'Tap what you hear', desc: 'Play audio, learner picks the word' },
 ];
 
-export default function QuestionEditor({ initial, onSave, onClose }) {
+const DEFAULT_BASE_LANGS = [
+  { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'am', name: 'Amharic', nativeName: 'አማርኛ' },
+];
+
+export default function QuestionEditor({ initial, onSave, onClose, baseLanguages }) {
+  const langs = baseLanguages?.length ? baseLanguages : DEFAULT_BASE_LANGS;
   const editing = Boolean(initial?.id);
   const [kind, setKind] = useState(initial?.kind ?? 'mcq');
-  const [prompt, setPrompt] = useState(initial?.prompt ?? '');
-  const [subPrompt, setSubPrompt] = useState(initial?.sub_prompt ?? '');
-  const [hint, setHint] = useState(initial?.hint ?? '');
+  const [activeLang, setActiveLang] = useState(langs[0]?.code ?? 'en');
   const [audioUrl, setAudioUrl] = useState(initial?.audio_url ?? '');
   const [options, setOptions] = useState(() => {
     const raw = Array.isArray(initial?.options) ? initial.options : [];
@@ -30,6 +34,33 @@ export default function QuestionEditor({ initial, onSave, onClose }) {
     const right = Array.isArray(initial?.match_right) ? initial.match_right : [];
     return left.map((l, i) => ({ left: l ?? '', right: right[i] ?? '' }));
   });
+
+  // Multi-language content: { en: { prompt, subPrompt, hint }, am: { ... } }
+  const [content, setContent] = useState(() => {
+    const existing = initial?.content;
+    if (existing && typeof existing === 'object') {
+      const out = {};
+      for (const lang of langs) {
+        out[lang.code] = {
+          prompt: existing[lang.code]?.prompt ?? existing[lang.code]?.prompt ?? initial?.prompt ?? '',
+          subPrompt: existing[lang.code]?.subPrompt ?? initial?.sub_prompt ?? '',
+          hint: existing[lang.code]?.hint ?? initial?.hint ?? '',
+        };
+      }
+      return out;
+    }
+    // Fallback: fill English from old fields
+    const en = {};
+    for (const lang of langs) {
+      en[lang.code] = {
+        prompt: initial?.prompt ?? '',
+        subPrompt: initial?.sub_prompt ?? '',
+        hint: initial?.hint ?? '',
+      };
+    }
+    return en;
+  });
+
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -48,29 +79,54 @@ export default function QuestionEditor({ initial, onSave, onClose }) {
   const addPair = () => setPairs((prev) => [...prev, { left: '', right: '' }]);
   const removePair = (i) => setPairs((prev) => prev.filter((_, j) => j !== i));
 
+  const updateContent = (langCode, field, value) =>
+    setContent((prev) => ({
+      ...prev,
+      [langCode]: { ...(prev[langCode] || {}), [field]: value },
+    }));
+
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    const cleanOptions = options.map((o) => o.trim());
-    const cleanPairs = pairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() }));
 
-    if (!prompt.trim()) return setError('Prompt is required.');
+    const enContent = content.en || {};
+    if (!enContent.prompt?.trim()) return setError('English prompt is required.');
     if (kind === 'listen' && !audioUrl.trim()) {
       return setError('Listen questions need audio — record or upload a clip first.');
     }
     if (kind !== 'match') {
-      if (cleanOptions.some((o) => !o)) return setError('Every option needs text — remove empty ones.');
-      if (cleanOptions.length < 2) return setError('Add at least 2 options.');
-      if (kind === 'fill' && !subPrompt.includes('___')) {
-        return setError('Fill sentences must contain a ___ blank in the sentence.');
+      if (options.some((o) => !o.trim())) return setError('Every option needs text — remove empty ones.');
+      if (options.length < 2) return setError('Add at least 2 options.');
+      if (kind === 'fill' && !enContent.subPrompt?.includes('___')) {
+        return setError('Fill sentences must contain a ___ blank (English).');
       }
     } else {
-      if (cleanPairs.length < 2) return setError('Add at least 2 pairs.');
-      if (cleanPairs.some((p) => !p.left || !p.right)) return setError('Every pair needs both sides filled.');
+      if (pairs.length < 2) return setError('Add at least 2 pairs.');
+      if (pairs.some((p) => !p.left.trim() || !p.right.trim())) return setError('Every pair needs both sides filled.');
     }
 
+    const cleanOptions = options.map((o) => o.trim());
+    const cleanPairs = pairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() }));
     const usesText = kind === 'mcq' || kind === 'fill';
-    const payload = { kind, prompt: prompt.trim(), audio_url: audioUrl.trim() };
+
+    // Build localized content JSON
+    const contentJson = {};
+    for (const lang of langs) {
+      const lc = content[lang.code] || {};
+      contentJson[lang.code] = {
+        prompt: lc.prompt?.trim() || '',
+        subPrompt: usesText ? (lc.subPrompt?.trim() || '') : '',
+        hint: kind === 'mcq' ? (lc.hint?.trim() || '') : '',
+      };
+    }
+
+    // Old flat fields use English as fallback
+    const payload = {
+      kind,
+      prompt: enContent.prompt?.trim() || '',
+      audio_url: audioUrl.trim(),
+      content: contentJson,
+    };
     if (kind === 'match') {
       payload.sub_prompt = '';
       payload.hint = '';
@@ -79,8 +135,8 @@ export default function QuestionEditor({ initial, onSave, onClose }) {
       payload.match_right = cleanPairs.map((p) => p.right);
       payload.answer_index = -1;
     } else {
-      payload.sub_prompt = usesText ? subPrompt.trim() : '';
-      payload.hint = kind === 'mcq' ? hint.trim() : '';
+      payload.sub_prompt = usesText ? (enContent.subPrompt?.trim() || '') : '';
+      payload.hint = kind === 'mcq' ? (enContent.hint?.trim() || '') : '';
       payload.match_left = null;
       payload.match_right = null;
       payload.options = cleanOptions;
@@ -95,6 +151,8 @@ export default function QuestionEditor({ initial, onSave, onClose }) {
       setSaving(false);
     }
   };
+
+  const currentContent = content[activeLang] || { prompt: '', subPrompt: '', hint: '' };
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
@@ -131,13 +189,40 @@ export default function QuestionEditor({ initial, onSave, onClose }) {
           </div>
         )}
 
-        <label className="mt-5 block">
-          <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">Prompt *</span>
+        {/* Language tabs for prompt/subPrompt/hint */}
+        {langs.length > 0 && (
+          <div className="mt-5">
+            <span className="mb-2 block text-xs font-black uppercase tracking-wider text-stone-400">
+              Prompt &amp; hint (per language)
+            </span>
+            <div className="flex gap-1 rounded-xl bg-stone-100 p-1">
+              {langs.map((l) => (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => setActiveLang(l.code)}
+                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-black transition ${
+                    activeLang === l.code
+                      ? 'bg-white text-green-700 shadow-sm'
+                      : 'text-stone-500 hover:text-stone-700'
+                  }`}
+                >
+                  {l.nativeName}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <label className="mt-4 block">
+          <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">
+            Prompt ({activeLang.toUpperCase()}) *
+          </span>
           <textarea
             rows={2}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="What does ሰላም mean?"
+            value={currentContent.prompt}
+            onChange={(e) => updateContent(activeLang, 'prompt', e.target.value)}
+            placeholder={activeLang === 'en' ? 'What does ሰላም mean?' : `'ሰላም' ማለት ምንድን ነው?`}
             required
             className="w-full resize-none rounded-xl border border-stone-200 px-3 py-2.5 text-sm outline-none focus:border-green-600"
           />
@@ -154,11 +239,11 @@ export default function QuestionEditor({ initial, onSave, onClose }) {
             {(kind === 'mcq' || kind === 'fill') && (
               <label className="mt-4 block">
                 <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">
-                  {kind === 'fill' ? 'Sentence with ___ blank *' : 'Extra line (optional)'}
+                  {kind === 'fill' ? `Sentence with ___ (${activeLang.toUpperCase()}) *` : `Extra line (${activeLang.toUpperCase()})`}
                 </span>
                 <input
-                  value={subPrompt}
-                  onChange={(e) => setSubPrompt(e.target.value)}
+                  value={currentContent.subPrompt}
+                  onChange={(e) => updateContent(activeLang, 'subPrompt', e.target.value)}
                   placeholder={kind === 'fill' ? 'Selam means ___' : 'Shown under the prompt'}
                   className="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm outline-none focus:border-green-600"
                 />
@@ -167,11 +252,11 @@ export default function QuestionEditor({ initial, onSave, onClose }) {
             {kind === 'mcq' && (
               <label className="mt-4 block">
                 <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">
-                  Hint (optional)
+                  Hint ({activeLang.toUpperCase()}) (optional)
                 </span>
                 <input
-                  value={hint}
-                  onChange={(e) => setHint(e.target.value)}
+                  value={currentContent.hint}
+                  onChange={(e) => updateContent(activeLang, 'hint', e.target.value)}
                   placeholder="A greeting used any time of day"
                   className="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm outline-none focus:border-green-600"
                 />

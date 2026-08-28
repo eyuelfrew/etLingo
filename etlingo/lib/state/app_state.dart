@@ -24,15 +24,18 @@ class AppState extends ChangeNotifier {
   int _hearts = 5;
   final int _streak = 0;
   bool _onboarded = false;
+  String _baseLanguage = 'en';
 
   bool _loadingLanguages = false;
   bool _loadingContent = false;
   String? _error;
 
   static const String _langKey = 'etlingo_language';
+  static const String _baseLangKey = 'etlingo_base_language';
 
   Language get language => _language;
   List<Language> get languages => _languages;
+  String get baseLanguage => _baseLanguage;
   int get xp => _xp;
   int get xpToday => _xpToday;
   int get hearts => _hearts;
@@ -107,6 +110,8 @@ class AppState extends ChangeNotifier {
   Future<bool> restoreSavedLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString(_langKey);
+    final savedBase = prefs.getString(_baseLangKey);
+    if (savedBase != null && savedBase.isNotEmpty) _baseLanguage = savedBase;
     if (code == null || code.isEmpty) return false;
 
     try {
@@ -183,6 +188,14 @@ class AppState extends ChangeNotifier {
       _loadingContent = false;
       notifyListeners();
     }
+  }
+
+  /// Set the base language used for prompts, hints, and meanings.
+  Future<void> chooseBaseLanguage(String code) async {
+    _baseLanguage = code;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_baseLangKey, code);
   }
 
   void loseHeart() {

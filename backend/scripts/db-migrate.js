@@ -18,6 +18,8 @@ const COLUMNS = [
   { table: 'app_users', column: 'status', clause: "status ENUM('active','banned') NOT NULL DEFAULT 'active'" },
   { table: 'questions', column: 'audio_url', clause: "audio_url VARCHAR(255) NOT NULL DEFAULT ''" },
   { table: 'phrases', column: 'audio_url', clause: "audio_url VARCHAR(255) NOT NULL DEFAULT ''" },
+  { table: 'lessons', column: 'teach_content', clause: 'teach_content JSON NULL' },
+  { table: 'questions', column: 'content', clause: 'content JSON NULL' },
 ];
 
 // Idempotent enum widenings: [{ table, column, type, mustInclude }]
@@ -82,6 +84,15 @@ const TABLES = {
     CONSTRAINT fk_np_user FOREIGN KEY (user_id)
       REFERENCES app_users(id) ON DELETE CASCADE
   ) ENGINE=InnoDB;`,
+  base_languages: `CREATE TABLE IF NOT EXISTS base_languages (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(8) NOT NULL UNIQUE,
+    name VARCHAR(80) NOT NULL,
+    native_name VARCHAR(120) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB;`,
 };
 
 async function tableExists(conn, table) {
@@ -139,6 +150,39 @@ export async function migrateAppUsers(connection) {
     console.log(`[db:migrate] creating table '${name}'...`);
     await connection.query(ddl);
     console.log(`[db:migrate] ✓ '${name}' created`);
+  }
+
+  // Seed base_languages if empty.
+  if (await tableExists(connection, 'base_languages')) {
+    const [countRows] = await connection.query('SELECT COUNT(*) AS n FROM base_languages');
+    if (countRows[0].n === 0) {
+      console.log('[db:migrate] seeding base_languages...');
+      await connection.query(`INSERT INTO base_languages (code, name, native_name, is_active, sort_order) VALUES
+        ('en', 'English', 'English', 1, 0),
+        ('am', 'Amharic', 'አማርኛ', 1, 1)`);
+      console.log('[db:migrate] ✓ base_languages seeded (en, am)');
+    }
+  }
+
+  // Migrate existing questions: copy prompt/sub_prompt/hint into content JSON.
+  if (await tableExists(connection, 'questions') && await columnExists(connection, 'questions', 'content')) {
+    const [rows] = await connection.query(
+      "SELECT id, prompt, sub_prompt, hint FROM questions WHERE content IS NULL"
+    );
+    if (rows.length) {
+      console.log(`[db:migrate] migrating ${rows.length} questions to content JSON...`);
+      for (const row of rows) {
+        const content = JSON.stringify({
+          en: {
+            prompt: row.prompt || '',
+            subPrompt: row.sub_prompt || '',
+            hint: row.hint || '',
+          },
+        });
+        await connection.query('UPDATE questions SET content = ? WHERE id = ?', [content, row.id]);
+      }
+      console.log(`[db:migrate] ✓ ${rows.length} questions migrated`);
+    }
   }
 }
 

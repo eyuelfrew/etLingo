@@ -121,6 +121,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showBaseLanguagePicker(BuildContext context, AppState state) {
+    const baseLangs = [
+      {'code': 'en', 'name': 'English', 'native': 'English'},
+      {'code': 'am', 'name': 'Amharic', 'native': 'አማርኛ'},
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.45,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: EtColors.line,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Base language',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            const Text(
+              'Choose the language used for prompts and hints.',
+              style: TextStyle(
+                  fontSize: 13, color: EtColors.muted, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 20),
+            ...baseLangs.map((l) {
+              final isSelected = state.baseLanguage == l['code'];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GestureDetector(
+                  onTap: () {
+                    state.chooseBaseLanguage(l['code']!);
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Base language set to ${l['name']}')),
+                    );
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? EtColors.green.withValues(alpha: 0.08)
+                          : EtColors.paper,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? EtColors.green : EtColors.line,
+                        width: isSelected ? 2 : 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(l['native']!,
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: isSelected
+                                          ? EtColors.greenDark
+                                          : EtColors.ink)),
+                              const SizedBox(height: 2),
+                              Text(l['name']!,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: EtColors.muted,
+                                      fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(Icons.check_circle_rounded,
+                              color: EtColors.green, size: 22),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = widget.state;
@@ -349,6 +451,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: Icons.swap_horiz_rounded,
               style: EtStyle.info,
               onPressed: () => Navigator.of(context).pushReplacementNamed('/pick'),
+            ),
+            const SizedBox(height: 10),
+            EtButton(
+              'Change base language',
+              icon: Icons.translate_rounded,
+              style: EtStyle.info,
+              onPressed: () => _showBaseLanguagePicker(context, state),
             ),
             const SizedBox(height: 10),
             EtButton(

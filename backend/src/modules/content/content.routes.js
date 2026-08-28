@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { requireAuth } from '../../core/auth.js';
 import {
-  languages, units, lessons, questions, phrases,
-  dashboardStats, appLanguages, bootstrap, languagePhrases,
+  languages, units, lessons, questions, phrases, baseLanguages,
+  dashboardStats, appLanguages, bootstrap, languagePhrases, appBaseLanguages,
 } from './content.controller.js';
 import { uploadAudio } from './audio.controller.js';
 
@@ -10,6 +10,7 @@ const router = Router();
 
 // ── Public (mobile app) ───────────────────────────────────────────────────────
 router.get('/app/languages', appLanguages);
+router.get('/app/base-languages', appBaseLanguages);
 router.get('/app/bootstrap/:code', bootstrap);
 router.get('/app/:code/phrases', languagePhrases);
 
@@ -41,6 +42,12 @@ router.get('/admin/phrases', requireAuth, phrases.list);
 router.post('/admin/phrases', requireAuth, phrases.create);
 router.put('/admin/phrases/:id', requireAuth, phrases.update);
 router.delete('/admin/phrases/:id', requireAuth, phrases.remove);
+
+router.get('/admin/base-languages', requireAuth, baseLanguages.list);
+router.get('/admin/base-languages/:id', requireAuth, baseLanguages.getOne);
+router.post('/admin/base-languages', requireAuth, baseLanguages.create);
+router.put('/admin/base-languages/:id', requireAuth, baseLanguages.update);
+router.delete('/admin/base-languages/:id', requireAuth, baseLanguages.remove);
 
 router.post('/admin/audio', requireAuth, ...uploadAudio);
 

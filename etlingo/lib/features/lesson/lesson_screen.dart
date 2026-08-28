@@ -47,6 +47,7 @@ class _LessonScreenState extends State<LessonScreen> {
         prompt: q.prompt,
         subPrompt: q.subPrompt,
         hint: q.hint,
+        content: q.content,
         options: [for (final i in order) q.options[i]],
         answerIndex: order.indexOf(q.answerIndex),
         matchLeft: q.matchLeft,
@@ -187,6 +188,7 @@ class _LessonScreenState extends State<LessonScreen> {
   }
 
   Widget _buildQuestion() {
+    final baseLang = widget.state.baseLanguage;
     Widget content;
     switch (_question.kind) {
       case QuestionKind.mcq:
@@ -196,6 +198,7 @@ class _LessonScreenState extends State<LessonScreen> {
           revealed: _revealed,
           accent: widget.unit.color,
           onSelect: (i) => setState(() => _selected = i),
+          baseLanguage: baseLang,
         );
       case QuestionKind.listen:
         content = ListenView(
@@ -212,6 +215,7 @@ class _LessonScreenState extends State<LessonScreen> {
           revealed: _revealed,
           accent: widget.unit.color,
           onSelect: (i) => setState(() => _selected = i),
+          baseLanguage: baseLang,
         );
       case QuestionKind.match:
         content = MatchView(
@@ -236,13 +240,13 @@ class _LessonScreenState extends State<LessonScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_question.prompt.isNotEmpty)
+        if (_question.promptFor(baseLang).isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: GestureDetector(
               onTap: _question.audioUrl.isEmpty ? null : _playPrompt,
               child: Text(
-                _question.prompt,
+                _question.promptFor(baseLang),
                 style: TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w700,

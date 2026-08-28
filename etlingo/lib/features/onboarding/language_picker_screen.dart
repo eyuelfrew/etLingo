@@ -25,7 +25,24 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
   void _pick(Language lang) async {
     await widget.state.chooseLanguage(lang);
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/home');
+    _showBaseLanguagePicker();
+  }
+
+  void _showBaseLanguagePicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _BaseLanguageSheet(
+        state: widget.state,
+        onDone: () {
+          Navigator.of(ctx).pop();
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed('/home');
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -223,6 +240,121 @@ class _LangCardState extends State<_LangCard> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BaseLanguageSheet extends StatelessWidget {
+  final AppState state;
+  final VoidCallback onDone;
+
+  const _BaseLanguageSheet({required this.state, required this.onDone});
+
+  static const _baseLangs = [
+    {'code': 'en', 'name': 'English', 'native': 'English'},
+    {'code': 'am', 'name': 'Amharic', 'native': 'አማርኛ'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.55,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: EtColors.line,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'How do you speak?',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Choose your native language — lessons will explain words in this language.',
+            style: TextStyle(
+              fontSize: 13,
+              color: EtColors.muted,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+          ..._baseLangs.map((l) {
+            final isSelected = state.baseLanguage == l['code'];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: GestureDetector(
+                onTap: () async {
+                  await state.chooseBaseLanguage(l['code']!);
+                  onDone();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? EtColors.green.withValues(alpha: 0.08)
+                        : EtColors.paper,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? EtColors.green : EtColors.line,
+                      width: isSelected ? 2 : 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l['native']!,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: isSelected ? EtColors.greenDark : EtColors.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              l['name']!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: EtColors.muted,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(Icons.check_circle_rounded, color: EtColors.green, size: 22),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

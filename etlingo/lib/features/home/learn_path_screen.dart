@@ -5,6 +5,7 @@ import '../../core/widgets/tibeb_band.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../lesson/lesson_screen.dart';
+import '../lesson/teaching_screen.dart';
 
 class LearnPathScreen extends StatelessWidget {
   final AppState state;
@@ -481,19 +482,27 @@ class _ZigzagNodesState extends State<ZigzagNodes>
                   unlocked: isUnlocked(lessons[i]),
                   pulse: _pulse,
                   onTap: () {
-                    if (lessons[i].questions.isEmpty) {
+                    if (lessons[i].questions.isEmpty &&
+                        lessons[i].teachItems.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
-                            '"${lessons[i].title}" has no questions yet — coming soon!'),
+                            '"${lessons[i].title}" has no content yet — coming soon!'),
                       ));
                       return;
                     }
+                    final hasTeach = lessons[i].teachItems.isNotEmpty;
                     Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => LessonScreen(
-                        state: widget.state,
-                        lesson: lessons[i],
-                        unit: widget.unit,
-                      ),
+                      builder: (_) => hasTeach
+                          ? TeachingScreen(
+                              state: widget.state,
+                              lesson: lessons[i],
+                              unit: widget.unit,
+                            )
+                          : LessonScreen(
+                              state: widget.state,
+                              lesson: lessons[i],
+                              unit: widget.unit,
+                            ),
                     ));
                   },
                 ),
@@ -636,7 +645,7 @@ class _Node extends StatelessWidget {
                       BoxShadow(color: EtColors.yellowDark, offset: Offset(0, 3))
                     ],
                   ),
-                  child: const Text('START',
+                  child: Text(lesson.teachItems.isNotEmpty ? 'LEARN' : 'START',
                       style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w800,

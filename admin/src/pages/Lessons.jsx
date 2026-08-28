@@ -53,6 +53,8 @@ export default function Lessons() {
   const [lessonCtx, setLessonCtx] = useState(null);
   const [lessonEditingId, setLessonEditingId] = useState(null);
   const [questionCtx, setQuestionCtx] = useState(null);
+  const [teachCtx, setTeachCtx] = useState(null);
+  const [baseLangs, setBaseLangs] = useState([]);
 
   useEffect(() => {
     client
@@ -66,6 +68,7 @@ export default function Lessons() {
         setError(e.response?.data?.error || 'Failed to load. Is MySQL initialized?');
         setLoading(false);
       });
+    client.get('/admin/base-languages').then(({ data }) => setBaseLangs(data)).catch(() => {});
   }, []);
 
   const loadTree = useCallback(async () => {
@@ -96,6 +99,13 @@ export default function Lessons() {
 
   const questionsOf = (lessonId) => questions.filter((q) => q.lesson_id === lessonId);
   const lessonsOf = (unitId) => lessons.filter((l) => l.unit_id === unitId);
+  const teachItemsOf = (lesson) => {
+    try {
+      if (Array.isArray(lesson.teach_content)) return lesson.teach_content;
+      if (typeof lesson.teach_content === 'string' && lesson.teach_content) return JSON.parse(lesson.teach_content);
+    } catch { /* ignore */ }
+    return [];
+  };
 
   const saveUnit = async (e) => {
     e.preventDefault();
@@ -164,6 +174,16 @@ export default function Lessons() {
     if (!confirm('Delete this question?')) return;
     await client.delete(`/admin/questions/${q.id}`);
     loadTree();
+  };
+
+  const saveTeachContent = async (lessonId, items) => {
+    try {
+      await client.put(`/admin/lessons/${lessonId}`, { teach_content: items });
+      setTeachCtx(null);
+      loadTree();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to save teach content');
+    }
   };
 
   return (
@@ -283,10 +303,16 @@ export default function Lessons() {
                                 {lesson.title}
                               </span>
                               <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-500">
-                                {qs.length} Q · {lesson.xp_reward} XP
+                                {teachItemsOf(lesson).length} T · {qs.length} Q · {lesson.xp_reward} XP
                               </span>
                             </div>
                             <div className="whitespace-nowrap">
+                              <button
+                                onClick={() => setTeachCtx({ lessonId: lesson.id, lesson })}
+                                className="mr-3 font-bold text-amber-600 hover:underline"
+                              >
+                                📚 Teach
+                              </button>
                               <button
                                 onClick={() => {
                                   setQuestionCtx({ lessonId: lesson.id, row: null });
@@ -453,6 +479,16 @@ export default function Lessons() {
           initial={questionCtx.row}
           onSave={saveQuestion}
           onClose={() => setQuestionCtx(null)}
+          baseLanguages={baseLangs}
+        />
+      )}
+
+      {teachCtx && (
+        <TeachContentEditor
+          lessonId={teachCtx.lessonId}
+          initial={teachItemsOf(teachCtx.lesson)}
+          onSave={(items) => saveTeachContent(teachCtx.lessonId, items)}
+          onClose={() => setTeachCtx(null)}
         />
       )}
     </div>
@@ -501,6 +537,123 @@ function ModalActions({ onCancel, label }) {
       <button type="button" onClick={onCancel} className="flex-1 rounded-xl border border-stone-300 py-3 text-sm font-black uppercase tracking-wide text-stone-500 hover:bg-stone-50">
         Cancel
       </button>
+    </div>
+  );
+}
+
+function TeachContentEditor({ lessonId, initial, onSave, onClose }) {
+  const [items, setItems] = useState(() => (Array.isArray(initial) ? [...initial] : []));
+  const [form, setForm] = useState({ target: '', translit: '', meaning: '', audioUrl: '' });
+  const [editIdx, setEditIdx] = useState(null);
+
+  const addItem = () => {
+    if (!form.target.trim()) return;
+    if (editIdx !== null) {
+      const next = [...items];
+      next[editIdx] = { ...form };
+      setItems(next);
+      setEditIdx(null);
+    } else {
+      setItems([...items, { ...form }]);
+    }
+    setForm({ target: '', translit: '', meaning: '', audioUrl: '' });
+  };
+
+  const removeItem = (i) => {
+    setItems(items.filter((_, idx) => idx !== i));
+    if (editIdx === i) { setEditIdx(null); setForm({ target: '', translit: '', meaning: '', audioUrl: '' }); }
+  };
+
+  const startEdit = (i) => {
+    setEditIdx(i);
+    setForm({ ...items[i] });
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
+      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-7 shadow-2xl">
+        <h2 className="text-xl font-black">📚 Teach Content</h2>
+        <p className="mt-1 text-sm text-stone-500">
+          Add words/phrases the learner sees before the quiz. Each card shows the target word, transliteration, and meaning.
+        </p>
+
+        {items.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {items.map((item, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5">
+                <span className="text-lg font-black text-amber-600">{i + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-base font-bold">{item.target}</span>
+                  <span className="block text-xs text-stone-500">{item.translit} · {item.meaning}</span>
+                </div>
+                <button onClick={() => startEdit(i)} className="text-xs font-bold text-blue-700 hover:underline">Edit</button>
+                <button onClick={() => removeItem(i)} className="text-xs font-bold text-red-600 hover:underline">Del</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4 rounded-xl border border-dashed border-stone-300 p-4">
+          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-stone-400">
+            {editIdx !== null ? `Edit item ${editIdx + 1}` : 'Add a word'}
+          </span>
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={form.target}
+              onChange={(e) => setForm({ ...form, target: e.target.value })}
+              placeholder="Target word (e.g. ሰላም)"
+              className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-green-600"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                value={form.translit}
+                onChange={(e) => setForm({ ...form, translit: e.target.value })}
+                placeholder="Transliteration"
+                className="rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-green-600"
+              />
+              <input
+                type="text"
+                value={form.meaning}
+                onChange={(e) => setForm({ ...form, meaning: e.target.value })}
+                placeholder="Meaning in English"
+                className="rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-green-600"
+              />
+            </div>
+            <input
+              type="text"
+              value={form.audioUrl}
+              onChange={(e) => setForm({ ...form, audioUrl: e.target.value })}
+              placeholder="Audio URL (optional)"
+              className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-green-600"
+            />
+            <button
+              type="button"
+              onClick={addItem}
+              disabled={!form.target.trim()}
+              className="w-full rounded-lg bg-amber-100 py-2 text-xs font-black uppercase tracking-wide text-amber-700 hover:bg-amber-200 disabled:opacity-40"
+            >
+              {editIdx !== null ? 'Update item' : '+ Add word'}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={() => onSave(items)}
+            className="flex-1 rounded-xl bg-green-700 py-3 text-sm font-black uppercase tracking-wide text-white hover:bg-green-600"
+          >
+            Save teach content
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-stone-300 py-3 text-sm font-black uppercase tracking-wide text-stone-500 hover:bg-stone-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

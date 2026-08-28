@@ -40,6 +40,7 @@ export const Lesson = sequelize.define('Lesson', {
   title: { type: DataTypes.STRING(160), allowNull: false },
   is_boss: { type: DataTypes.BOOLEAN, defaultValue: false },
   xp_reward: { type: DataTypes.INTEGER, defaultValue: 10 },
+  teach_content: { type: DataTypes.JSON, allowNull: true },
   sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { tableName: 'lessons' });
 
@@ -50,6 +51,7 @@ export const Question = sequelize.define('Question', {
   prompt: { type: DataTypes.STRING(300), allowNull: false },
   sub_prompt: { type: DataTypes.STRING(300), defaultValue: '' },
   hint: { type: DataTypes.STRING(160), defaultValue: '' },
+  content: { type: DataTypes.JSON, allowNull: true },
   options: { type: DataTypes.JSON, allowNull: true },
   answer_index: { type: DataTypes.INTEGER, defaultValue: -1 },
   match_left: { type: DataTypes.JSON, allowNull: true },
@@ -68,3 +70,12 @@ export const Phrase = sequelize.define('Phrase', {
   audio_url: { type: DataTypes.STRING(255), defaultValue: '' },
   sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { tableName: 'phrases' });
+
+export const BaseLanguage = sequelize.define('BaseLanguage', {
+  id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+  code: { type: DataTypes.STRING(8), allowNull: false, unique: true },
+  name: { type: DataTypes.STRING(80), allowNull: false },
+  native_name: { type: DataTypes.STRING(120), allowNull: false },
+  is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+  sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
+}, { tableName: 'base_languages' });

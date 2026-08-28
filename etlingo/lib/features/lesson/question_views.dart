@@ -136,6 +136,7 @@ class McqView extends StatelessWidget {
   final bool revealed;
   final Color accent;
   final ValueChanged<int> onSelect;
+  final String baseLanguage;
 
   const McqView({
     super.key,
@@ -144,13 +145,16 @@ class McqView extends StatelessWidget {
     required this.revealed,
     required this.accent,
     required this.onSelect,
+    this.baseLanguage = 'en',
   });
 
   @override
   Widget build(BuildContext context) {
+    final localizedSubPrompt = question.subPromptFor(baseLanguage);
+    final localizedHint = question.hintFor(baseLanguage);
     return Column(
       children: [
-        if (question.subPrompt.isNotEmpty) ...[
+        if (localizedSubPrompt.isNotEmpty) ...[
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 26),
@@ -162,13 +166,13 @@ class McqView extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  question.subPrompt,
+                  localizedSubPrompt,
                   style: const TextStyle(
                       fontSize: 34, fontWeight: FontWeight.w800, height: 1.15),
                 ),
-                if (question.hint.isNotEmpty) ...[
+                if (localizedHint.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(question.hint,
+                  Text(localizedHint,
                       style: const TextStyle(
                           fontSize: 12.5,
                           color: EtColors.muted,
@@ -257,6 +261,7 @@ class FillView extends StatelessWidget {
   final bool revealed;
   final Color accent;
   final ValueChanged<int> onSelect;
+  final String baseLanguage;
 
   const FillView({
     super.key,
@@ -265,11 +270,13 @@ class FillView extends StatelessWidget {
     required this.revealed,
     required this.accent,
     required this.onSelect,
+    this.baseLanguage = 'en',
   });
 
   @override
   Widget build(BuildContext context) {
-    final parts = question.subPrompt.split('___');
+    final localizedSubPrompt = question.subPromptFor(baseLanguage);
+    final parts = localizedSubPrompt.split('___');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

@@ -47,11 +47,51 @@ class WordOption {
   }
 }
 
+class TeachItem {
+  final String target;
+  final String translit;
+  final String meaning;
+  final Map<String, String> meanings;
+  final String audioUrl;
+  const TeachItem({
+    required this.target,
+    this.translit = '',
+    this.meaning = '',
+    this.meanings = const {},
+    this.audioUrl = '',
+  });
+
+  String meaningFor(String baseLang) {
+    if (meanings.containsKey(baseLang) && meanings[baseLang]!.isNotEmpty) {
+      return meanings[baseLang]!;
+    }
+    return meaning;
+  }
+
+  factory TeachItem.fromJson(Map<String, dynamic> j) {
+    final rawMeanings = j['meanings'];
+    final meanings = <String, String>{};
+    if (rawMeanings is Map) {
+      for (final entry in rawMeanings.entries) {
+        meanings[entry.key.toString()] = entry.value?.toString() ?? '';
+      }
+    }
+    return TeachItem(
+      target: (j['target'] ?? '').toString(),
+      translit: (j['translit'] ?? '').toString(),
+      meaning: (j['meaning'] ?? '').toString(),
+      meanings: meanings,
+      audioUrl: (j['audioUrl'] ?? '').toString(),
+    );
+  }
+}
+
 class Question {
   final QuestionKind kind;
   final String prompt;
   final String subPrompt;
   final String hint;
+  final Map<String, dynamic> content;
   final List<WordOption> options;
   final int answerIndex;
   final List<String> matchLeft;
@@ -63,6 +103,7 @@ class Question {
     required this.prompt,
     this.subPrompt = '',
     this.hint = '',
+    this.content = const {},
     this.options = const [],
     this.answerIndex = -1,
     this.matchLeft = const [],
@@ -70,10 +111,38 @@ class Question {
     this.audioUrl = '',
   });
 
+  /// Returns the prompt for a given base language, falling back to the default prompt.
+  String promptFor(String baseLang) {
+    final lc = content[baseLang];
+    if (lc is Map && (lc['prompt']?.toString().isNotEmpty ?? false)) {
+      return lc['prompt'].toString();
+    }
+    return prompt;
+  }
+
+  /// Returns the subPrompt for a given base language.
+  String subPromptFor(String baseLang) {
+    final lc = content[baseLang];
+    if (lc is Map && (lc['subPrompt']?.toString().isNotEmpty ?? false)) {
+      return lc['subPrompt'].toString();
+    }
+    return subPrompt;
+  }
+
+  /// Returns the hint for a given base language.
+  String hintFor(String baseLang) {
+    final lc = content[baseLang];
+    if (lc is Map && (lc['hint']?.toString().isNotEmpty ?? false)) {
+      return lc['hint'].toString();
+    }
+    return hint;
+  }
+
   const Question.mcq({
     required this.prompt,
     this.subPrompt = '',
     this.hint = '',
+    this.content = const {},
     required this.options,
     required this.answerIndex,
     this.audioUrl = '',
@@ -84,6 +153,7 @@ class Question {
   const Question.fill({
     required this.prompt,
     required this.subPrompt,
+    this.content = const {},
     required this.options,
     required this.answerIndex,
     this.audioUrl = '',
@@ -94,6 +164,7 @@ class Question {
 
   const Question.match({
     required this.prompt,
+    this.content = const {},
     required this.matchLeft,
     required this.matchRight,
     this.audioUrl = '',
@@ -112,11 +183,21 @@ class Question {
     List<String> stringList(dynamic v) =>
         v is List ? v.map((e) => e.toString()).toList() : <String>[];
 
+    // Parse content map
+    final rawContent = j['content'];
+    final contentMap = <String, dynamic>{};
+    if (rawContent is Map) {
+      for (final entry in rawContent.entries) {
+        contentMap[entry.key.toString()] = entry.value;
+      }
+    }
+
     return Question(
       kind: kind,
       prompt: (j['prompt'] ?? '').toString(),
       subPrompt: (j['subPrompt'] ?? '').toString(),
       hint: (j['hint'] ?? '').toString(),
+      content: contentMap,
       options: j['options'] is List
           ? (j['options'] as List).map(WordOption.fromJson).toList()
           : const <WordOption>[],
@@ -134,14 +215,20 @@ class Lesson {
   final String title;
   final bool isBoss;
   final List<Question> questions;
-  const Lesson(this.id, this.title, {this.isBoss = false, required this.questions});
+  final List<TeachItem> teachItems;
+  const Lesson(this.id, this.title, {this.isBoss = false, required this.questions, this.teachItems = const []});
 
   factory Lesson.fromJson(Map<String, dynamic> j, {required List<Question> questions}) {
+    final rawTeach = j['teachContent'];
+    final teachItems = rawTeach is List
+        ? rawTeach.map((e) => TeachItem.fromJson(e as Map<String, dynamic>)).toList()
+        : const <TeachItem>[];
     return Lesson(
       (j['id'] ?? '').toString(),
       (j['title'] ?? '').toString(),
       isBoss: j['isBoss'] == true || j['isBoss'] == 1,
       questions: questions,
+      teachItems: teachItems,
     );
   }
 }
