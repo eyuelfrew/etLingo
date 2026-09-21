@@ -201,7 +201,8 @@ export async function bootstrap(req, res) {
   });
   lessonsOut.forEach(l => {
     delete l.is_boss; delete l.xp_reward; delete l.teach_content;
-    delete l.resources; delete l.unit_id; delete l.sort_order; delete l.created_at;
+    // keep camelCase `resources` for the mobile app
+    delete l.unit_id; delete l.sort_order; delete l.created_at;
   });
 
   const questionsOut = questionsList.map(q => {

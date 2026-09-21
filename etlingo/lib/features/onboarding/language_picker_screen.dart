@@ -47,22 +47,9 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
           // (or continue the guided path) instead of dumping them on the path.
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (_) => Scaffold(
-                appBar: AppBar(
-                  title: Text(widget.state.language.nativeName),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacementNamed('/home');
-                      },
-                      child: Text(EtStrings.pathTab),
-                    ),
-                  ],
-                ),
-                body: CurriculumScreen(
-                  state: widget.state,
-                  showPathCta: true,
-                ),
+              builder: (_) => CurriculumScreen(
+                state: widget.state,
+                showPathCta: true,
               ),
             ),
           );

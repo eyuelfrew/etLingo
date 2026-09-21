@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Ethiopian flag + parchment design system for etLingo.
+/// Ethiopian flag + white/dark design system for etLingo.
 class EtColors {
   static const green = Color(0xFF078930);
   static const greenDark = Color(0xFF056B24);
@@ -13,13 +13,15 @@ class EtColors {
   static const redDark = Color(0xFFA80E14);
   static const blue = Color(0xFF0F47AF);
   static const blueDark = Color(0xFF0B3685);
-  static const ink = Color(0xFF1A140E);
-  static const paper = Color(0xFFFFF8EC);
+
+  // White / dark chrome (no cream/grey wash)
+  static const ink = Color(0xFF111111);
+  static const paper = Color(0xFFFFFFFF);
   static const card = Color(0xFFFFFFFF);
-  static const cream = Color(0xFFFFFDF6);
-  static const line = Color(0xFFE8DFCB);
-  static const muted = Color(0xFF8A8270);
-  static const locked = Color(0xFFB9B2A2);
+  static const cream = Color(0xFFFFFFFF);
+  static const line = Color(0xFFE8E8E8);
+  static const muted = Color(0xFF6B6B6B);
+  static const locked = Color(0xFFA3A3A3);
   static const gold = Color(0xFFE8A800);
   static const heart = Color(0xFFFF6B7A);
 

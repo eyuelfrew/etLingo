@@ -5,6 +5,7 @@ import {
   dashboardStats, appLanguages, bootstrap, languagePhrases, appBaseLanguages,
 } from './content.controller.js';
 import { uploadAudio, uploadMedia } from './media.controller.js';
+import { listObjects, getStorageStatus } from './storage.controller.js';
 
 const router = Router();
 
@@ -51,5 +52,7 @@ router.delete('/admin/base-languages/:id', requireAuth, baseLanguages.remove);
 
 router.post('/admin/audio', requireAuth, ...uploadAudio);
 router.post('/admin/media', requireAuth, ...uploadMedia);
+router.get('/admin/storage', requireAuth, getStorageStatus);
+router.get('/admin/storage/objects', requireAuth, listObjects);
 
 export default router;

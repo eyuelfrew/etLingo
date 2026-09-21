@@ -4,7 +4,6 @@ import '../../core/widgets/et_bottom_nav.dart';
 import '../../state/app_state.dart';
 import 'learn_path_screen.dart';
 import 'phrasebook_screen.dart';
-import 'leaderboard_screen.dart';
 import 'profile_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -20,17 +19,17 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Learn · Words · You (Rank removed — mock leaderboard, not needed)
     final pages = [
       LearnPathScreen(state: widget.state),
       PhrasebookScreen(state: widget.state),
-      LeaderboardScreen(state: widget.state),
       ProfileScreen(state: widget.state),
     ];
 
-    // Rebuild when learner progress or app language (EN/AM) changes.
     return ListenableBuilder(
       listenable: Listenable.merge([widget.state, EtStrings.langNotifier]),
       builder: (context, _) => Scaffold(
+        backgroundColor: Colors.white,
         body: IndexedStack(index: _tab, children: pages),
         bottomNavigationBar: EtBottomNav(
           index: _tab,

@@ -29,6 +29,7 @@ import authRoutes from './auth/auth.routes.js';
 import contentRoutes from './content/content.routes.js';
 import usersRoutes from './users/users.routes.js';
 import notificationRoutes from './notifications/notifications.routes.js';
+import mediaRoutes from '../routes/media.routes.js';
 
 export function initModels() {
   // Ensures every module's tables exist (idempotent). Structural changes to
@@ -43,6 +44,7 @@ export function buildModuleRouters() {
   root.use(contentRoutes);        // /app/languages, /app/bootstrap/:code, /admin/{languages,units,...}
   root.use(usersRoutes);          // /admin/app-users
   root.use(notificationRoutes);   // /app/notifications, /admin/notifications
+  root.use(mediaRoutes);          // /media/* — S3 proxy for audio/PDF playback
 
   return root;
 }

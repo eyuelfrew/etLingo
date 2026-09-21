@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import client, { apiError } from '../api/client';
 import QuestionEditor from '../components/QuestionEditor';
-import AudioField from '../components/AudioField';
+import MediaField, { resolveMediaUrl as resolveStorageUrl } from '../components/MediaField';
+import AudioField, { resolveAudioUrl } from '../components/AudioField';
 import { PageHeader, Badge, Button, Banner } from '../components/ui';
 
 const ICONS = {
@@ -57,6 +58,7 @@ export default function Lessons() {
   const [unitTeachCtx, setUnitTeachCtx] = useState(null);
   const [lessonCtx, setLessonCtx] = useState(null);
   const [lessonEditingId, setLessonEditingId] = useState(null);
+  const [resourceCtx, setResourceCtx] = useState(null);
   const [questionCtx, setQuestionCtx] = useState(null);
   const [teachCtx, setTeachCtx] = useState(null);
 
@@ -153,6 +155,25 @@ export default function Lessons() {
       if (typeof unit.teach_content === 'string' && unit.teach_content) return JSON.parse(unit.teach_content);
     } catch { /* ignore */ }
     return [];
+  };
+
+  const resourcesOf = (lesson) => {
+    try {
+      if (Array.isArray(lesson.resources)) return lesson.resources;
+      if (typeof lesson.resources === 'string' && lesson.resources) return JSON.parse(lesson.resources);
+    } catch { /* ignore */ }
+    return [];
+  };
+
+  const saveLessonResources = async (lessonId, resources) => {
+    try {
+      await client.put(`/admin/lessons/${lessonId}`, { resources });
+      setResourceCtx(null);
+      setError('');
+      await loadTree();
+    } catch (err) {
+      setError(apiError(err, 'Could not save lesson files'));
+    }
   };
 
   /** Does this row already have instruction-language text for the selected base? */
@@ -523,6 +544,18 @@ export default function Lessons() {
                                 Extra teach
                               </button>
                               <button
+                                onClick={() =>
+                                  setResourceCtx({
+                                    lessonId: lesson.id,
+                                    lesson,
+                                    initial: resourcesOf(lesson),
+                                  })
+                                }
+                                className="mr-3 font-semibold text-et-blue hover:underline"
+                              >
+                                Files ({resourcesOf(lesson).length})
+                              </button>
+                              <button
                                 onClick={() => {
                                   setQuestionCtx({ lessonId: lesson.id, row: null });
                                   if (!open) setExpanded(lesson.id);
@@ -725,6 +758,15 @@ export default function Lessons() {
         </div>
       )}
 
+      {resourceCtx && (
+        <LessonResourcesEditor
+          lesson={resourceCtx.lesson}
+          initial={resourceCtx.initial}
+          onSave={(items) => saveLessonResources(resourceCtx.lessonId, items)}
+          onClose={() => setResourceCtx(null)}
+        />
+      )}
+
       {unitTeachCtx && (
         <TeachContentEditor
           title="Unit vocabulary"
@@ -799,6 +841,119 @@ function ModalActions({ onCancel, label }) {
   );
 }
 
+function LessonResourcesEditor({ lesson, initial, onSave, onClose }) {
+  const [items, setItems] = useState(() => (Array.isArray(initial) ? [...initial] : []));
+  const [title, setTitle] = useState('');
+  const [url, setUrl] = useState('');
+  const [kind, setKind] = useState('pdf');
+
+  const add = () => {
+    if (!url.trim()) return;
+    const k =
+      kind ||
+      (/\.pdf(\?|$)/i.test(url) ? 'pdf' : /\.(mp3|m4a|wav|ogg|webm)(\?|$)/i.test(url) ? 'audio' : 'file');
+    setItems([
+      ...items,
+      {
+        kind: k,
+        url: url.trim(),
+        title: title.trim() || (k === 'pdf' ? 'PDF resource' : 'Audio resource'),
+      },
+    ]);
+    setTitle('');
+    setUrl('');
+    setKind('pdf');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/45 p-4 pt-8">
+      <div className="w-full max-w-xl rounded-2xl border border-line-soft bg-panel p-6 shadow-2xl">
+        <h2 className="text-[18px] font-bold text-ink">Lesson files</h2>
+        <p className="mt-1 text-[13px] text-muted">
+          Audio clips and PDFs for <strong>{lesson?.title}</strong>. Files are stored on S3; only the
+          link is saved in the database. Learners open them from the teach/lesson screen.
+        </p>
+
+        {items.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {items.map((item, i) => (
+              <div
+                key={`${item.url}-${i}`}
+                className="flex items-center gap-3 rounded-xl border border-line-soft bg-canvas/50 px-4 py-2.5"
+              >
+                <span className="rounded-full bg-et-blue/10 px-2 py-0.5 text-[10px] font-bold text-et-blue uppercase">
+                  {item.kind}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13px] font-semibold">{item.title}</div>
+                  <div className="truncate text-[11px] text-muted" title={item.url}>
+                    {item.url}
+                  </div>
+                </div>
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[12px] font-semibold text-et-blue hover:underline"
+                >
+                  Open
+                </a>
+                <button
+                  onClick={() => setItems(items.filter((_, idx) => idx !== i))}
+                  className="text-[12px] font-semibold text-et-red hover:underline"
+                >
+                  Del
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4 space-y-3 rounded-xl border border-dashed border-line p-4">
+          <p className="text-[12px] font-semibold text-muted">Add a file (uploads to S3)</p>
+          <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
+            <select
+              value={kind}
+              onChange={(e) => setKind(e.target.value)}
+              className="rounded-xl border border-line px-3 py-2.5 text-sm outline-none focus:border-et-green"
+            >
+              <option value="pdf">PDF</option>
+              <option value="audio">Audio</option>
+              <option value="image">Image</option>
+            </select>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Title (e.g. Greetings worksheet)"
+              className="rounded-xl border border-line px-3 py-2.5 text-sm outline-none focus:border-et-green"
+            />
+          </div>
+          <MediaField
+            label="File"
+            value={url}
+            onChange={setUrl}
+            endpoint="/admin/media"
+            hint={kind === 'pdf' ? 'Upload a PDF — the S3 link is saved automatically.' : 'Record or upload audio — S3 link saved automatically.'}
+            accept={kind === 'pdf' ? 'application/pdf' : kind === 'audio' ? 'audio/*' : 'audio/*,application/pdf,image/*'}
+          />
+          <Button type="button" variant="primary" onClick={add} disabled={!url.trim()}>
+            Add to lesson
+          </Button>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <Button type="button" variant="primary" onClick={() => onSave(items)} className="flex-1">
+            Save files
+          </Button>
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TeachContentEditor({
   lessonId,
   initial,
@@ -828,19 +983,20 @@ function TeachContentEditor({
     meaning: '',
     meanings: {},
     audioUrl: '',
+    pdfUrl: '',
   });
   const [editIdx, setEditIdx] = useState(null);
   const [activeMeaningLang, setActiveMeaningLang] = useState(
     focusBaseLang || sortedLangs[0]?.code || 'en',
   );
 
-  const setMeaningFor = (code, value) => {
-    setForm((prev) => ({
-      ...prev,
-      meanings: { ...prev.meanings, [code]: value },
-      // Keep legacy English `meaning` in sync so older clients still work.
-      ...(code === 'en' || code === langs[0]?.code ? { meaning: value } : {}),
-    }));
+  const emptyForm = {
+    target: '',
+    translit: '',
+    meaning: '',
+    meanings: {},
+    audioUrl: '',
+    pdfUrl: '',
   };
 
   const addItem = () => {
@@ -853,7 +1009,8 @@ function TeachContentEditor({
       translit: form.translit,
       meaning: fallback,
       meanings,
-      audioUrl: form.audioUrl,
+      audioUrl: form.audioUrl || '',
+      pdfUrl: form.pdfUrl || '',
     };
     if (editIdx !== null) {
       const next = [...items];
@@ -863,14 +1020,14 @@ function TeachContentEditor({
     } else {
       setItems([...items, payload]);
     }
-    setForm({ target: '', translit: '', meaning: '', meanings: {}, audioUrl: '' });
+    setForm(emptyForm);
   };
 
   const removeItem = (i) => {
     setItems(items.filter((_, idx) => idx !== i));
     if (editIdx === i) {
       setEditIdx(null);
-      setForm({ target: '', translit: '', meaning: '', meanings: {}, audioUrl: '' });
+      setForm(emptyForm);
     }
   };
 
@@ -883,37 +1040,79 @@ function TeachContentEditor({
       meaning: item.meaning || '',
       meanings: { ...(item.meanings || {}) },
       audioUrl: item.audioUrl || item.audio_url || '',
+      pdfUrl: item.pdfUrl || item.pdf_url || '',
     });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/45 p-4 pt-8">
-      <div className="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-line-soft bg-panel p-7 shadow-2xl">
+      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-line-soft bg-panel p-7 shadow-2xl">
         <h2 className="text-[18px] font-bold text-ink">{title}</h2>
         <p className="mt-1 text-[13px] text-muted">
           {description ||
-            'Add words/phrases the learner sees before the quiz. Meanings can be set per base language.'}
+            'Add words learners see before the quiz. Audio and PDF attachments are stored on S3.'}
         </p>
 
         {items.length > 0 && (
           <div className="mt-4 space-y-2">
-            {items.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-xl border border-line-soft bg-canvas/50 px-4 py-2.5">
-                <span className="text-[15px] font-semibold text-et-green">{i + 1}</span>
-                <div className="min-w-0 flex-1">
-                  <span className="font-ethiopic block text-[15px] font-semibold">{item.target}</span>
-                  <span className="block text-[12px] text-muted">
-                    {item.translit}
-                    {item.meaning ? ` · ${item.meaning}` : ''}
-                    {item.meanings && Object.keys(item.meanings).length > 1
-                      ? ` · ${Object.keys(item.meanings).join('/')}`
-                      : ''}
-                  </span>
+            {items.map((item, i) => {
+              const audio = item.audioUrl || item.audio_url || '';
+              const pdf = item.pdfUrl || item.pdf_url || '';
+              return (
+                <div
+                  key={i}
+                  className="rounded-xl border border-line-soft bg-canvas/50 px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-[15px] font-semibold text-et-green">{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-ethiopic block text-[15px] font-semibold">
+                        {item.target}
+                      </span>
+                      <span className="block text-[12px] text-muted">
+                        {item.translit}
+                        {item.meaning ? ` · ${item.meaning}` : ''}
+                        {item.meanings && Object.keys(item.meanings).length > 1
+                          ? ` · ${Object.keys(item.meanings).join('/')}`
+                          : ''}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => startEdit(i)}
+                      className="text-[12px] font-semibold text-et-blue hover:underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => removeItem(i)}
+                      className="text-[12px] font-semibold text-et-red hover:underline"
+                    >
+                      Del
+                    </button>
+                  </div>
+                  {(audio || pdf) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 pl-8">
+                      {audio && (
+                        <audio controls src={resolveAudioUrl(audio)} className="h-9 max-w-[240px]" />
+                      )}
+                      {pdf && (
+                        <a
+                          href={resolveAudioUrl(pdf)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-lg border border-et-red/25 bg-et-red/5 px-3 py-1.5 text-[12px] font-semibold text-et-red hover:underline"
+                        >
+                          Open PDF
+                        </a>
+                      )}
+                      <span className="max-w-[160px] truncate text-[10px] text-muted">
+                        {audio || pdf}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <button onClick={() => startEdit(i)} className="text-[12px] font-semibold text-et-blue hover:underline">Edit</button>
-                <button onClick={() => removeItem(i)} className="text-[12px] font-semibold text-et-red hover:underline">Del</button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -961,7 +1160,9 @@ function TeachContentEditor({
                     setActiveMeaningLang(l.code);
                     setForm((prev) => ({
                       ...prev,
-                      meaning: prev.meanings?.[l.code] ?? (l.code === focusBaseLang || l.code === 'en' ? prev.meaning : ''),
+                      meaning:
+                        prev.meanings?.[l.code] ??
+                        (l.code === focusBaseLang || l.code === 'en' ? prev.meaning : ''),
                     }));
                   }}
                   className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
@@ -977,10 +1178,21 @@ function TeachContentEditor({
                 </button>
               ))}
             </div>
-            <AudioField
-              label="Teach word audio"
+            <MediaField
+              label="Pronunciation audio"
               value={form.audioUrl}
               onChange={(v) => setForm({ ...form, audioUrl: v })}
+              endpoint="/admin/media"
+              accept="audio/*"
+              hint="Record or upload — saved to S3"
+            />
+            <MediaField
+              label="PDF (optional)"
+              value={form.pdfUrl}
+              onChange={(v) => setForm({ ...form, pdfUrl: v })}
+              endpoint="/admin/media"
+              accept="application/pdf"
+              hint="Worksheet / notes for this word"
             />
             <button
               type="button"

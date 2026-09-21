@@ -1,0 +1,117 @@
+
+> etlingo-backend@1.0.0 dev
+> nodemon src/server.js
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): src\**\*[39m
+[33m[nodemon] watching extensions: js[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[Firebase] ✓ Admin SDK initialized
+[Firebase]   project: etlingo
+[Firebase]   service account: firebase-adminsdk-fbsvc@etlingo.iam.gserviceaccount.com
+==========================================
+  EtLingo backend running at :5050
+  Health   http://localhost:5050/api/health
+  API v1   http://localhost:5050/api/v1
+==========================================
+[redis] connecting → redis://127.0.0.1:6379
+[redis] ✓ ready (redis://127.0.0.1:6379)
+[db] MySQL UP | Redis UP
+[2026-09-21T09:51:34.383Z] [fcm] Firebase Messaging AVAILABLE (project "etlingo")
+  Worker   campaign runner every 15s
+[0mGET /api/v1/health [32m200[0m 3.631 ms - 342[0m
+[http] GET /api/v1/health → 200 (6ms) anon
+[0mGET /api/v1/app/languages [32m200[0m 10.043 ms - 1220[0m
+[http] GET /api/v1/app/languages → 200 (10ms) anon
+[0mGET /api/v1/admin/base-languages [36m304[0m 10.004 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (10ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 5.723 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (6ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 4.736 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (5ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 8.102 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (8ms) admin#1/super
+[0mGET /api/v1/admin/languages [36m304[0m 8.084 ms - -[0m
+[http] GET /api/v1/admin/languages → 304 (9ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 10.513 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (10ms) admin#1/super
+[0mGET /api/v1/admin/languages [36m304[0m 10.008 ms - -[0m
+[http] GET /api/v1/admin/languages → 304 (11ms) admin#1/super
+[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 9.709 ms - -[0m
+[http] GET /api/v1/admin/units?language_id=1 → 304 (10ms) admin#1/super
+[0mGET /api/v1/admin/lessons [36m304[0m 9.876 ms - -[0m
+[http] GET /api/v1/admin/lessons → 304 (10ms) admin#1/super
+[0mGET /api/v1/admin/questions [36m304[0m 9.259 ms - -[0m
+[http] GET /api/v1/admin/questions → 304 (9ms) admin#1/super
+[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 8.057 ms - -[0m
+[http] GET /api/v1/admin/units?language_id=1 → 304 (9ms) admin#1/super
+[0mGET /api/v1/admin/lessons [36m304[0m 13.997 ms - -[0m
+[http] GET /api/v1/admin/lessons → 304 (14ms) admin#1/super
+[0mGET /api/v1/admin/questions [36m304[0m 13.357 ms - -[0m
+[http] GET /api/v1/admin/questions → 304 (14ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 3.227 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (3ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 2.470 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (3ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 3.238 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (4ms) admin#1/super
+[0mGET /api/v1/admin/languages [36m304[0m 6.990 ms - -[0m
+[http] GET /api/v1/admin/languages → 304 (8ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 6.598 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (7ms) admin#1/super
+[0mGET /api/v1/admin/languages [36m304[0m 6.478 ms - -[0m
+[http] GET /api/v1/admin/languages → 304 (7ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 6.236 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (6ms) admin#1/super
+[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 6.466 ms - -[0m
+[http] GET /api/v1/admin/units?language_id=1 → 304 (6ms) admin#1/super
+[0mGET /api/v1/admin/lessons [36m304[0m 6.446 ms - -[0m
+[http] GET /api/v1/admin/lessons → 304 (7ms) admin#1/super
+[0mGET /api/v1/admin/questions [36m304[0m 3.911 ms - -[0m
+[http] GET /api/v1/admin/questions → 304 (4ms) admin#1/super
+[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 6.883 ms - -[0m
+[http] GET /api/v1/admin/units?language_id=1 → 304 (7ms) admin#1/super
+[0mGET /api/v1/admin/lessons [36m304[0m 6.513 ms - -[0m
+[http] GET /api/v1/admin/lessons → 304 (6ms) admin#1/super
+[0mGET /api/v1/admin/questions [36m304[0m 4.602 ms - -[0m
+[http] GET /api/v1/admin/questions → 304 (5ms) admin#1/super
+[0mGET /api/v1/admin/languages [36m304[0m 4.836 ms - -[0m
+[http] GET /api/v1/admin/languages → 304 (5ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 4.022 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (5ms) admin#1/super
+[0mGET /api/v1/admin/languages [36m304[0m 7.062 ms - -[0m
+[http] GET /api/v1/admin/languages → 304 (7ms) admin#1/super
+[0mGET /api/v1/admin/base-languages [36m304[0m 5.941 ms - -[0m
+[http] GET /api/v1/admin/base-languages → 304 (6ms) admin#1/super
+[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 5.053 ms - -[0m
+[http] GET /api/v1/admin/units?language_id=1 → 304 (5ms) admin#1/super
+[0mGET /api/v1/admin/lessons [36m304[0m 4.813 ms - -[0m
+[http] GET /api/v1/admin/lessons → 304 (5ms) admin#1/super
+[0mGET /api/v1/admin/questions [36m304[0m 3.940 ms - -[0m
+[http] GET /api/v1/admin/questions → 304 (5ms) admin#1/super
+[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 4.920 ms - -[0m
+[http] GET /api/v1/admin/units?language_id=1 → 304 (5ms) admin#1/super
+[0mGET /api/v1/admin/lessons [36m304[0m 3.739 ms - -[0m
+[http] GET /api/v1/admin/lessons → 304 (4ms) admin#1/super
+[0mGET /api/v1/admin/questions [36m304[0m 3.077 ms - -[0m
+[http] GET /api/v1/admin/questions → 304 (3ms) admin#1/super
+[0mGET /api/v1/app/bootstrap/am [32m200[0m 6.925 ms - 2207[0m
+[http] GET /api/v1/app/bootstrap/am → 200 (8ms) anon
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting child process[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[Firebase] ✓ Admin SDK initialized
+[Firebase]   project: etlingo
+[Firebase]   service account: firebase-adminsdk-fbsvc@etlingo.iam.gserviceaccount.com
+==========================================
+  EtLingo backend running at :5050
+  Health   http://localhost:5050/api/health
+  API v1   http://localhost:5050/api/v1
+==========================================
+[redis] connecting → redis://127.0.0.1:6379
+[redis] ✓ ready (redis://127.0.0.1:6379)
+[db] MySQL UP | Redis UP
+[2026-09-21T10:03:29.919Z] [fcm] Firebase Messaging AVAILABLE (project "etlingo")
+  Worker   campaign runner every 15s
+^C^C

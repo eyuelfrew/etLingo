@@ -3,3 +3,5 @@ node_modules/
 uploads/
 *-firebase-adminsdk-*.json
 serviceAccountKey*.json
+**/s3-strag.md
+*.pem

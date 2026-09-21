@@ -34,6 +34,11 @@ const NAV_GROUPS = [
         label: 'Phrasebook',
         icon: 'M8 10h8M8 14h5M21 12a9 9 0 11-4-7.5L21 3v9z',
       },
+      {
+        to: '/storage',
+        label: 'S3 Storage',
+        icon: 'M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',
+      },
     ],
   },
   {

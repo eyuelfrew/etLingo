@@ -90,7 +90,7 @@ class _BrowseLessonsButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: () {
           Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => CurriculumScreen(state: state),
+            builder: (_) => CurriculumScreen(state: state, showPathCta: true),
           ));
         },
         child: Container(

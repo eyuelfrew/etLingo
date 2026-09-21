@@ -84,13 +84,18 @@ class TeachItem {
   final String meaning;
   final Map<String, String> meanings;
   final String audioUrl;
+  final String pdfUrl;
   const TeachItem({
     required this.target,
     this.translit = '',
     this.meaning = '',
     this.meanings = const {},
     this.audioUrl = '',
+    this.pdfUrl = '',
   });
+
+  bool get hasAudio => audioUrl.isNotEmpty;
+  bool get hasPdf => pdfUrl.isNotEmpty;
 
   String meaningFor(String baseLang) {
     if (meanings.containsKey(baseLang) && meanings[baseLang]!.isNotEmpty) {
@@ -112,7 +117,8 @@ class TeachItem {
       translit: (j['translit'] ?? '').toString(),
       meaning: (j['meaning'] ?? '').toString(),
       meanings: meanings,
-      audioUrl: (j['audioUrl'] ?? '').toString(),
+      audioUrl: (j['audioUrl'] ?? j['audio_url'] ?? '').toString(),
+      pdfUrl: (j['pdfUrl'] ?? j['pdf_url'] ?? '').toString(),
     );
   }
 }
@@ -241,6 +247,32 @@ class Question {
   }
 }
 
+class LessonFileResource {
+  final String kind; // pdf | audio | image | file
+  final String url;
+  final String title;
+
+  const LessonFileResource({
+    required this.kind,
+    required this.url,
+    this.title = '',
+  });
+
+  bool get isPdf => kind == 'pdf' || url.toLowerCase().contains('.pdf');
+  bool get isAudio =>
+      kind == 'audio' ||
+      RegExp(r'\.(mp3|m4a|wav|ogg|webm|aac)(\?|$)', caseSensitive: false)
+          .hasMatch(url);
+
+  factory LessonFileResource.fromJson(Map<String, dynamic> j) {
+    return LessonFileResource(
+      kind: (j['kind'] ?? 'file').toString(),
+      url: (j['url'] ?? '').toString(),
+      title: (j['title'] ?? '').toString(),
+    );
+  }
+}
+
 class Lesson {
   final String id;
   final String title;
@@ -248,6 +280,7 @@ class Lesson {
   final int xpReward;
   final List<Question> questions;
   final List<TeachItem> teachItems;
+  final List<LessonFileResource> resources;
   const Lesson(
     this.id,
     this.title, {
@@ -255,6 +288,7 @@ class Lesson {
     this.xpReward = 10,
     required this.questions,
     this.teachItems = const [],
+    this.resources = const [],
   });
 
   factory Lesson.fromJson(Map<String, dynamic> j, {required List<Question> questions}) {
@@ -262,6 +296,14 @@ class Lesson {
     final teachItems = rawTeach is List
         ? rawTeach.map((e) => TeachItem.fromJson(e as Map<String, dynamic>)).toList()
         : const <TeachItem>[];
+    final rawRes = j['resources'];
+    final resources = rawRes is List
+        ? rawRes
+            .whereType<Map>()
+            .map((e) => LessonFileResource.fromJson(Map<String, dynamic>.from(e)))
+            .where((r) => r.url.isNotEmpty)
+            .toList()
+        : const <LessonFileResource>[];
     return Lesson(
       (j['id'] ?? '').toString(),
       (j['title'] ?? '').toString(),
@@ -269,6 +311,7 @@ class Lesson {
       xpReward: (j['xpReward'] is num) ? (j['xpReward'] as num).toInt() : 10,
       questions: questions,
       teachItems: teachItems,
+      resources: resources,
     );
   }
 }

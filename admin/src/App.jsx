@@ -9,6 +9,7 @@ import Lessons from './pages/Lessons';
 import Phrases from './pages/Phrases';
 import Users from './pages/Users';
 import Notifications from './pages/Notifications';
+import Storage from './pages/Storage';
 
 function Protected({ children }) {
   const { admin } = useAuth();
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="phrases" element={<Phrases />} />
             <Route path="users" element={<Users />} />
             <Route path="notifications" element={<Notifications />} />
+            <Route path="storage" element={<Storage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

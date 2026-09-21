@@ -526,10 +526,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
             _StatCard(
-              icon: Icons.emoji_events_rounded,
-              label: '${EtStrings.tabRank} · ${EtStrings.goldLeague}',
-              value: 'Gold',
-              color: EtIcons.league,
+              icon: Icons.menu_book_rounded,
+              label: EtStrings.phrasebook,
+              value: '${lang.phrases.length}',
+              color: EtColors.yellowDark,
             ),
 
             const SizedBox(height: 18),

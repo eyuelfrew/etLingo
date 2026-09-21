@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/ui/et_strings.dart';
 import '../../core/widgets/et_button.dart';
@@ -176,11 +177,74 @@ class _TeachingScreenState extends State<TeachingScreen> {
                 ),
               ),
               _buildBottom(),
+              if (widget.lesson.resources.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: widget.lesson.resources.map((r) {
+                      final color = r.isPdf
+                          ? EtColors.red
+                          : r.isAudio
+                              ? EtColors.green
+                              : EtColors.blue;
+                      final icon = r.isPdf
+                          ? Icons.picture_as_pdf_rounded
+                          : r.isAudio
+                              ? Icons.headphones_rounded
+                              : Icons.attach_file_rounded;
+                      return ActionChip(
+                        avatar: Icon(icon, size: 16, color: color),
+                        label: Text(
+                          r.title.isEmpty
+                              ? (r.isPdf ? 'PDF' : 'Audio')
+                              : r.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                            fontSize: 12,
+                          ),
+                        ),
+                        backgroundColor: color.withValues(alpha: 0.08),
+                        side: BorderSide(color: color.withValues(alpha: 0.25)),
+                        onPressed: () => _openResource(r),
+                      );
+                    }).toList(),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _openResource(LessonFileResource res) async {
+    if (res.isAudio) {
+      await AudioService.instance.play(res.url);
+      return;
+    }
+    final uri = Uri.parse(AudioService.resolve(res.url));
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: EtColors.card,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: Text(res.title.isEmpty ? 'File' : res.title),
+          content: SelectableText(res.url),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(EtStrings.cancel),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildTopBar() {
@@ -390,32 +454,77 @@ class _WordCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (item.audioUrl.isNotEmpty) ...[
+                if (item.hasAudio || item.hasPdf) ...[
                   const SizedBox(height: 18),
-                  GestureDetector(
-                    onTap: () => AudioService.instance.play(item.audioUrl),
-                    child: Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [unit.color, unit.dark],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: unit.dark.withValues(alpha: 0.35),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      if (item.hasAudio)
+                        GestureDetector(
+                          onTap: () async {
+                            await AudioService.instance.play(item.audioUrl);
+                            if (!context.mounted) return;
+                            final err = AudioService.instance.lastError;
+                            if (err != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Audio failed: ${AudioService.resolve(item.audioUrl)}\n'
+                                    'Use LAN IP in ETLINGO_API_URL (not localhost) on a phone.',
+                                  ),
+                                  duration: const Duration(seconds: 4),
+                                ),
+                              );
+                            }
+                          },
+                          child: Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [unit.color, unit.dark],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: unit.dark.withValues(alpha: 0.35),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.volume_up_rounded,
+                              color: Colors.white,
+                              size: 26,
+                            ),
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.volume_up_rounded,
-                        color: Colors.white,
-                        size: 26,
-                      ),
-                    ),
+                        ),
+                      if (item.hasPdf)
+                        ActionChip(
+                          avatar: const Icon(Icons.picture_as_pdf_rounded,
+                              size: 16, color: EtColors.red),
+                          label: Text(
+                            'PDF',
+                            style: TextStyle(
+                              color: EtColors.red,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                          backgroundColor: EtColors.red.withValues(alpha: 0.08),
+                          side: BorderSide(
+                              color: EtColors.red.withValues(alpha: 0.3)),
+                          onPressed: () async {
+                            final uri =
+                                Uri.parse(AudioService.resolve(item.pdfUrl));
+                            await launchUrl(
+                                uri, mode: LaunchMode.externalApplication);
+                          },
+                        ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 22),

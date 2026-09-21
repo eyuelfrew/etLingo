@@ -7,12 +7,12 @@
   --font-sans: "Plus Jakarta Sans", "Noto Sans Ethiopic", "Segoe UI", system-ui, sans-serif;
   --font-ethiopic: "Noto Sans Ethiopic", "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
 
-  --color-canvas: #f4f1ea;
+  --color-canvas: #ffffff;
   --color-panel: #ffffff;
-  --color-ink: #1a140e;
-  --color-muted: #7a7264;
-  --color-line: #e4dcc8;
-  --color-line-soft: #efe8d8;
+  --color-ink: #111111;
+  --color-muted: #6b6b6b;
+  --color-line: #e8e8e8;
+  --color-line-soft: #f0f0f0;
 
   --color-et-green: #078930;
   --color-et-green-dark: #056b24;
@@ -32,8 +32,8 @@
   --et-green: #078930;
   --et-yellow: #f7c60a;
   --et-red: #da121a;
-  --et-ink: #1a140e;
-  --et-canvas: #f4f1ea;
+  --et-ink: #111111;
+  --et-canvas: #ffffff;
 }
 
 html,
@@ -45,8 +45,8 @@ body,
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background: var(--color-canvas);
-  color: var(--color-ink);
+  background: #ffffff;
+  color: #111111;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

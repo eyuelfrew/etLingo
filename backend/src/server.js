@@ -5,10 +5,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes/index.js';
 import { errorHandler } from './core/http.js';
-import { requestLogger } from './core/logger.js';
+import { requestLogger, requestEcho } from './core/logger.js';
 import { globalLimiter } from './middlewares/rateLimiter.js';
 import { checkStatus, logStatus, getMysqlStatus, getRedisStatus } from './core/status.js';
 import { getFirebaseStatus } from './core/firebase.js';
+import { getS3Status } from './core/storage.js';
 import { startCampaignWorker } from './modules/notifications/notifications.runner.js';
 import { logFcmAvailability } from './modules/notifications/notifications.push.js';
 
@@ -48,21 +49,22 @@ app.use(cors({
 // Body parsing with size limit
 app.use(express.json({ limit: '2mb' }));
 
-// Request logging — one line per call:
-// [iso-date] METHOD /path → status (ms) [who] {redacted body}
-// Placed after express.json so mutating requests can show their payload.
+// Request logging — morgan (dev) + [http] echo like teftef.
+// Must be before routes so every API call is logged.
 app.use(requestLogger);
+app.use(requestEcho);
 
 // Health endpoint (no auth needed, no versioning)
 app.get('/api/health', async (_req, res) => {
   const mysql = getMysqlStatus();
   const redis = getRedisStatus();
   const firebase = getFirebaseStatus();
+  const s3 = getS3Status();
   const isOk = mysql === 'up';
   res.status(isOk ? 200 : 503).json({
     status: isOk ? 'ok' : 'degraded',
     service: 'etlingo-backend',
-    mysql, redis, firebase,
+    mysql, redis, firebase, s3,
     time: new Date().toISOString(),
   });
 });
