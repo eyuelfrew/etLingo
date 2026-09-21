@@ -33,7 +33,7 @@ class AppState extends ChangeNotifier {
   /// Switch UI chrome language (English / Amharic). Persisted on device.
   Future<void> chooseAppLanguage(String code) async {
     _appLanguage = (code == 'am') ? 'am' : 'en';
-    EtStrings.setLang(_appLanguage);
+    EtStrings.setLang(_appLanguage); // notifies langNotifier → UI rebuilds
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();

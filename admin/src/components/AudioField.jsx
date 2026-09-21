@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import client, { apiOrigin } from '../api/client';
+import { Button } from './ui';
 
 export function resolveAudioUrl(path) {
   if (!path) return '';
@@ -65,42 +66,28 @@ export default function AudioField({ label = 'Audio', value, onChange }) {
   };
 
   const stopRecording = () => {
-    recorderRef.current?.state === 'recording' && recorderRef.current.stop();
+    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
     setRecording(false);
   };
 
   return (
     <div>
-      <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">{label}</span>
-      <div className="flex flex-wrap items-center gap-2">
+      <span className="block text-[13px] font-semibold text-ink">{label}</span>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
         {!recording ? (
-          <button
-            type="button"
-            onClick={startRecording}
-            disabled={busy}
-            className="rounded-xl border border-stone-200 px-3 py-2 text-xs font-black uppercase tracking-wide text-stone-600 hover:bg-stone-50 disabled:opacity-50"
-          >
-            🎤 Record
-          </button>
+          <Button type="button" variant="secondary" onClick={startRecording} disabled={busy}>
+            Record
+          </Button>
         ) : (
-          <button
-            type="button"
-            onClick={stopRecording}
-            className="flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-xs font-black uppercase tracking-wide text-white hover:bg-red-500"
-          >
-            <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+          <Button type="button" variant="danger" onClick={stopRecording}>
+            <span className="h-2 w-2 animate-pulse rounded-full bg-et-red" />
             Stop · {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
-          </button>
+          </Button>
         )}
 
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          disabled={busy || recording}
-          className="rounded-xl border border-stone-200 px-3 py-2 text-xs font-black uppercase tracking-wide text-stone-600 hover:bg-stone-50 disabled:opacity-50"
-        >
-          ⬆ Upload
-        </button>
+        <Button type="button" variant="secondary" onClick={() => fileRef.current?.click()} disabled={busy || recording}>
+          Upload file
+        </Button>
         <input
           ref={fileRef}
           type="file"
@@ -115,20 +102,15 @@ export default function AudioField({ label = 'Audio', value, onChange }) {
 
         {value && (
           <>
-            <audio controls src={resolveAudioUrl(value)} className="h-9 max-w-[220px]" />
-            <button
-              type="button"
-              onClick={() => onChange('')}
-              title="Remove audio"
-              className="px-1 font-bold text-red-500 hover:text-red-700"
-            >
-              ✕
-            </button>
+            <audio controls src={resolveAudioUrl(value)} className="h-10 max-w-[240px]" />
+            <Button type="button" variant="ghost" onClick={() => onChange('')}>
+              Remove
+            </Button>
           </>
         )}
-        {busy && <span className="text-xs font-bold text-stone-400">Uploading…</span>}
+        {busy && <span className="text-[12px] font-medium text-muted">Uploading…</span>}
       </div>
-      {error && <p className="mt-1 text-xs font-semibold text-red-600">⚠ {error}</p>}
+      {error && <p className="mt-1.5 text-[12px] font-medium text-et-red">{error}</p>}
     </div>
   );
 }

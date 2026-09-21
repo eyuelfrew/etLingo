@@ -162,10 +162,10 @@ export default function Notifications() {
       </div>
 
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">{error}</p>
+        <p className="rounded-lg border border-et-red/20 bg-et-red/5 px-4 py-2.5 text-sm font-medium text-et-red">{error}</p>
       )}
       {notice && (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">{notice}</p>
+        <p className="rounded-lg border border-et-green/20 bg-et-green-soft px-4 py-2.5 text-sm font-medium text-et-green-dark">{notice}</p>
       )}
 
       <div className="grid gap-5 xl:grid-cols-2">
@@ -187,7 +187,7 @@ export default function Notifications() {
 
         {/* Audience: everyone or a selected subset */}
             <Field label="Audience">
-              <div className="mt-1.5 inline-flex rounded-lg border border-slate-300 p-0.5">
+              <div className="mt-1.5 inline-flex rounded-xl border border-line p-1">
                 {[
                   ['everyone', 'All learners'],
                   ['some', 'Selected'],
@@ -196,8 +196,8 @@ export default function Notifications() {
                     type="button"
                     key={val}
                     onClick={() => setTargetMode(val)}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                      targetMode === val ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'
+                    className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition ${
+                      targetMode === val ? 'bg-et-green text-white' : 'text-muted hover:text-ink'
                     }`}
                   >
                     {label}
@@ -213,18 +213,18 @@ export default function Notifications() {
               <div>
                 <input value={targetQ} onChange={(e) => setTargetQ(e.target.value)} placeholder="Filter by name or email…" className={inputCls} />
                 {filteredLearners.length === 0 ? (
-                  <p className="mt-2 text-xs text-slate-400">No learners match this filter.</p>
+                  <p className="mt-2 text-xs text-muted">No learners match this filter.</p>
                 ) : (
-                  <div className="mt-2 max-h-52 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
+                  <div className="mt-2 max-h-52 divide-y divide-line-soft overflow-y-auto rounded-lg border border-line-soft">
                     {filteredLearners.map((u) => {
                       const sel = targetIds.includes(u.id);
                       return (
-                        <label key={u.id} className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 transition ${sel ? 'bg-slate-50' : 'hover:bg-slate-50/60'}`}>
-                          <input type="checkbox" checked={sel} onChange={() => toggleTarget(u.id)} className="h-4 w-4 rounded accent-slate-900" />
-                          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-700">
+                        <label key={u.id} className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 transition ${sel ? 'bg-canvas/70' : 'hover:bg-canvas/60'}`}>
+                          <input type="checkbox" checked={sel} onChange={() => toggleTarget(u.id)} className="h-4 w-4 rounded accent-et-green" />
+                          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">
                             {u.displayName || 'Unnamed learner'}
                           </span>
-                          <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{u.email}</span>
+                          <span className="hidden shrink-0 text-xs text-muted sm:block">{u.email}</span>
                           {u.hasPushToken
                             ? <Badge tone="info">Push on</Badge>
                             : <Badge>Inbox only</Badge>}
@@ -285,7 +285,7 @@ export default function Notifications() {
         {campaigns.length === 0 ? (
           <EmptyState title="No campaigns scheduled" hint="Create one above to deliver a message progressively." />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-line-soft">
             {campaigns.map((c) => {
               const active = c.status === 'pending' || c.status === 'running';
               const tone = c.status === 'completed' ? 'success'
@@ -297,9 +297,9 @@ export default function Notifications() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge tone={tone} dot>{c.status}</Badge>
-                      <p className="truncate text-[13px] font-medium text-slate-800">{c.title}</p>
+                      <p className="truncate text-[13px] font-medium text-et-green-dark">{c.title}</p>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-muted">
                       {c.totalSent} delivered · {c.batchSize} per batch · {Math.round(c.intervalSeconds / 60)} min interval · {c.audience === 'active' ? 'active learners' : 'all learners'}
                     </p>
                     {active && (
@@ -327,21 +327,21 @@ export default function Notifications() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[13px]">
               <thead>
-                <tr className="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-400">
+                <tr className="border-b border-line-soft text-[11px] uppercase tracking-wider text-muted">
                   <th className="py-2 pr-4 font-semibold">Status</th>
                   <th className="py-2 pr-4 font-semibold">Title</th>
                   <th className="py-2 pr-4 font-semibold">Message</th>
                   <th className="py-2 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line-soft">
                 {rows.map((n) => (
                   <tr key={n.id} className="align-top">
                     <td className="py-2.5 pr-4">
                       {n.read ? <Badge>Read</Badge> : <Badge tone="info" dot>New</Badge>}
                     </td>
-                    <td className="py-2.5 pr-4 font-medium text-slate-800">{n.title}</td>
-                    <td className="max-w-sm py-2.5 pr-4 text-slate-500">{n.body || '—'}</td>
+                    <td className="py-2.5 pr-4 font-medium text-et-green-dark">{n.title}</td>
+                    <td className="max-w-sm py-2.5 pr-4 text-muted">{n.body || '—'}</td>
                     <td className="py-2.5 text-right">
                       <Button variant="danger" onClick={() => removeNotif(n.id)}>Delete</Button>
                     </td>

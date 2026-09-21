@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import client from '../api/client';
+import {
+  PageHeader,
+  Button,
+  Banner,
+  Badge,
+  Field,
+  inputCls,
+  tableShellCls,
+  thCls,
+  tdCls,
+  Modal,
+  EmptyState,
+} from '../components/ui';
 
 const empty = {
   code: '',
@@ -54,7 +67,7 @@ export default function Languages() {
   };
 
   const remove = async (id) => {
-    if (!confirm('Delete this language and ALL its content?')) return;
+    if (!confirm('Delete this language and ALL of its units, lessons, questions and phrases?')) return;
     await client.delete(`/admin/languages/${id}`);
     load();
   };
@@ -67,153 +80,248 @@ export default function Languages() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black">Languages</h1>
-          <p className="mt-1 text-sm font-medium text-stone-500">
-            Courses offered in the mobile app
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            setEditingId(null);
-            setForm(empty);
-            setOpen(true);
-          }}
-          className="rounded-xl bg-green-700 px-5 py-2.5 text-sm font-black uppercase tracking-wide text-white shadow hover:bg-green-600"
-        >
-          + Add language
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Curriculum"
+        title="Languages"
+        subtitle="Courses offered in the mobile app. Each language has its own units, lessons, and phrasebook."
+        actions={
+          <Button
+            variant="primary"
+            onClick={() => {
+              setEditingId(null);
+              setForm(empty);
+              setOpen(true);
+            }}
+          >
+            Add language
+          </Button>
+        }
+      />
 
       {error && (
-        <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-          ⚠ {error}
-        </p>
+        <div className="mt-5">
+          <Banner tone="warning">{error}</Banner>
+        </div>
       )}
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="bg-stone-50 text-left text-xs font-black uppercase tracking-wider text-stone-400">
-            <tr>
-              <th className="px-5 py-3">Language</th>
-              <th className="px-4 py-3">Code</th>
-              <th className="px-4 py-3">Speakers</th>
-              <th className="px-4 py-3">Greeting</th>
-              <th className="px-4 py-3">Active</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr><td colSpan={6} className="px-5 py-10 text-center text-stone-400">Loading…</td></tr>
-            )}
-            {!loading && rows.length === 0 && (
-              <tr><td colSpan={6} className="px-5 py-10 text-center text-stone-400">No languages yet — add your first one.</td></tr>
-            )}
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-stone-100 hover:bg-stone-50/60">
-                <td className="px-5 py-3">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="h-8 w-8 shrink-0 rounded-lg"
-                      style={{ background: `linear-gradient(135deg, ${r.color_hex}, ${r.dark_hex})` }}
-                    />
-                    <div>
-                      <div className="font-bold">{r.native_name}</div>
-                      <div className="text-xs text-stone-400">{r.name}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3"><code className="rounded bg-stone-100 px-2 py-0.5">{r.code}</code></td>
-                <td className="px-4 py-3 font-semibold">{r.speakers}</td>
-                <td className="px-4 py-3">{r.hello_target}</td>
-                <td className="px-4 py-3">
-                  {r.is_active ? (
-                    <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-700">Live</span>
-                  ) : (
-                    <span className="rounded-full bg-stone-200 px-2.5 py-1 text-xs font-bold text-stone-500">Hidden</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-right whitespace-nowrap">
-                  <button onClick={() => edit(r)} className="mr-2 font-bold text-blue-700 hover:underline">Edit</button>
-                  <button onClick={() => remove(r.id)} className="font-bold text-red-600 hover:underline">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-6">
+        {loading ? (
+          <div className={`${tableShellCls} px-5 py-12 text-center text-sm text-muted`}>Loading…</div>
+        ) : rows.length === 0 ? (
+          <EmptyState
+            icon="🗣"
+            title="No languages yet"
+            hint="Add Amharic, Afaan Oromo, Tigrinya, or any course you want learners to see."
+            action={
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setEditingId(null);
+                  setForm(empty);
+                  setOpen(true);
+                }}
+              >
+                Add first language
+              </Button>
+            }
+          />
+        ) : (
+          <div className={tableShellCls}>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-line-soft">
+                  <th className={thCls}>Language</th>
+                  <th className={thCls}>Code</th>
+                  <th className={thCls}>Speakers</th>
+                  <th className={thCls}>Greeting</th>
+                  <th className={thCls}>Status</th>
+                  <th className={`${thCls} text-right`}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-t border-line-soft transition hover:bg-canvas/60">
+                    <td className={tdCls}>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="h-9 w-9 shrink-0 rounded-xl"
+                          style={{ background: `linear-gradient(135deg, ${r.color_hex}, ${r.dark_hex})` }}
+                        />
+                        <div>
+                          <div className="font-ethiopic font-semibold text-ink">{r.native_name || r.name}</div>
+                          <div className="text-[12px] text-muted">{r.name}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={tdCls}>
+                      <code className="rounded-lg bg-canvas px-2 py-1 text-[12px] font-semibold text-muted">
+                        {r.code}
+                      </code>
+                    </td>
+                    <td className={`${tdCls} font-medium`}>{r.speakers || '—'}</td>
+                    <td className={`${tdCls} font-ethiopic`}>{r.hello_target || '—'}</td>
+                    <td className={tdCls}>
+                      {r.is_active ? (
+                        <Badge tone="success" dot>Live</Badge>
+                      ) : (
+                        <Badge tone="neutral">Hidden</Badge>
+                      )}
+                    </td>
+                    <td className={`${tdCls} text-right whitespace-nowrap`}>
+                      <button
+                        onClick={() => edit(r)}
+                        className="mr-3 text-[13px] font-semibold text-et-blue hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => remove(r.id)}
+                        className="text-[13px] font-semibold text-et-red hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-          <form onSubmit={save} className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-7 shadow-2xl">
-            <h2 className="text-xl font-black">{editingId ? 'Edit language' : 'New language'}</h2>
-            <div className="mt-5 grid grid-cols-2 gap-4">
-              <Field label="Code *" value={form.code} onChange={(v) => setForm({ ...form, code: v })} placeholder="am" required />
-              <Field label="Name *" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Amharic" required />
-              <Field label="Native name" value={form.native_name} onChange={(v) => setForm({ ...form, native_name: v })} placeholder="አማርኛ" />
-              <Field label="Speakers" value={form.speakers} onChange={(v) => setForm({ ...form, speakers: v })} placeholder="57M+" />
-              <Field label="Script preview" value={form.script_preview} onChange={(v) => setForm({ ...form, script_preview: v })} placeholder="ሀ ለ ሐ መ" />
-              <Field label="Region" value={form.region} onChange={(v) => setForm({ ...form, region: v })} placeholder="Addis Ababa" />
-              <Field label="Hello word" value={form.hello_target} onChange={(v) => setForm({ ...form, hello_target: v })} placeholder="ሰላም" />
-              <Field label="Hello meaning" value={form.hello_meaning} onChange={(v) => setForm({ ...form, hello_meaning: v })} placeholder="Selam · Hello" />
-              <ColorField label="Color" value={form.color_hex} onChange={(v) => setForm({ ...form, color_hex: v })} />
-              <ColorField label="Dark color" value={form.dark_hex} onChange={(v) => setForm({ ...form, dark_hex: v })} />
-              <Field label="Sort order" type="number" value={form.sort_order} onChange={(v) => setForm({ ...form, sort_order: Number(v) })} />
-            </div>
-            <label className="mt-4 flex items-center gap-2 text-sm font-semibold">
-              <input
-                type="checkbox"
-                checked={!!form.is_active}
-                onChange={(e) => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })}
-              />
-              Visible in the app
-            </label>
-            <div className="mt-6 flex gap-3">
-              <button type="submit" className="flex-1 rounded-xl bg-green-700 py-3 text-sm font-black uppercase tracking-wide text-white hover:bg-green-600">
-                Save
-              </button>
-              <button type="button" onClick={() => setOpen(false)} className="flex-1 rounded-xl border border-stone-300 py-3 text-sm font-black uppercase tracking-wide text-stone-500 hover:bg-stone-50">
+        <Modal
+          title={editingId ? 'Edit language' : 'New language'}
+          description="Branding and metadata shown in the learner app language picker."
+          onClose={() => setOpen(false)}
+          wide
+          footer={
+            <>
+              <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
                 Cancel
-              </button>
+              </Button>
+              <Button type="submit" form="lang-form" variant="primary">
+                Save language
+              </Button>
+            </>
+          }
+        >
+          <form id="lang-form" onSubmit={save} className="grid grid-cols-2 gap-4">
+            <Field label="Code *">
+              <input
+                className={inputCls}
+                value={form.code}
+                required
+                placeholder="am"
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+              />
+            </Field>
+            <Field label="Name *">
+              <input
+                className={inputCls}
+                value={form.name}
+                required
+                placeholder="Amharic"
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </Field>
+            <Field label="Native name">
+              <input
+                className={`${inputCls} font-ethiopic`}
+                value={form.native_name}
+                placeholder="አማርኛ"
+                onChange={(e) => setForm({ ...form, native_name: e.target.value })}
+              />
+            </Field>
+            <Field label="Speakers">
+              <input
+                className={inputCls}
+                value={form.speakers}
+                placeholder="~32M"
+                onChange={(e) => setForm({ ...form, speakers: e.target.value })}
+              />
+            </Field>
+            <Field label="Script preview">
+              <input
+                className={`${inputCls} font-ethiopic`}
+                value={form.script_preview}
+                placeholder="ሰላም እንዴት ነህ?"
+                onChange={(e) => setForm({ ...form, script_preview: e.target.value })}
+              />
+            </Field>
+            <Field label="Region">
+              <input
+                className={inputCls}
+                value={form.region}
+                placeholder="Ethiopia"
+                onChange={(e) => setForm({ ...form, region: e.target.value })}
+              />
+            </Field>
+            <Field label="Hello word">
+              <input
+                className={`${inputCls} font-ethiopic`}
+                value={form.hello_target}
+                placeholder="ሰላም"
+                onChange={(e) => setForm({ ...form, hello_target: e.target.value })}
+              />
+            </Field>
+            <Field label="Hello meaning">
+              <input
+                className={inputCls}
+                value={form.hello_meaning}
+                placeholder="Hello / Peace"
+                onChange={(e) => setForm({ ...form, hello_meaning: e.target.value })}
+              />
+            </Field>
+            <ColorField
+              label="Primary color"
+              value={form.color_hex}
+              onChange={(v) => setForm({ ...form, color_hex: v })}
+            />
+            <ColorField
+              label="Dark color"
+              value={form.dark_hex}
+              onChange={(v) => setForm({ ...form, dark_hex: v })}
+            />
+            <Field label="Sort order">
+              <input
+                type="number"
+                className={inputCls}
+                value={form.sort_order}
+                onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
+              />
+            </Field>
+            <div className="flex items-end pb-2">
+              <label className="flex cursor-pointer items-center gap-2.5 text-[14px] font-medium text-ink">
+                <input
+                  type="checkbox"
+                  checked={!!form.is_active}
+                  onChange={(e) => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })}
+                  className="h-4 w-4 rounded border-line accent-et-green"
+                />
+                Visible in the app
+              </label>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
     </div>
   );
 }
 
-function Field({ label, value, onChange, type = 'text', required, placeholder }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">{label}</span>
-      <input
-        type={type}
-        value={value ?? ''}
-        required={required}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm outline-none focus:border-green-600"
-      />
-    </label>
-  );
-}
-
 function ColorField({ label, value, onChange }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">{label}</span>
-      <div className="flex items-center gap-2">
+    <div>
+      <span className="block text-[13px] font-semibold text-ink">{label}</span>
+      <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-line bg-panel px-2 py-1.5">
         <input
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 w-12 cursor-pointer rounded-lg border border-stone-200"
+          className="h-8 w-10 cursor-pointer rounded-lg border-0 bg-transparent"
         />
-        <code className="text-xs font-bold text-stone-500">{value}</code>
+        <code className="text-[12px] font-semibold text-muted">{value}</code>
       </div>
-    </label>
+    </div>
   );
 }

@@ -7,18 +7,22 @@ const keyPath = process.env.FIREBASE_KEY_PATH;
 
 let firebaseApp = null;
 let initError = null;
+let projectId = null;
 
 try {
   if (getApps().length === 0) {
     const serviceAccount = JSON.parse(readFileSync(keyPath, 'utf8'));
+    projectId = serviceAccount.project_id || null;
     firebaseApp = initializeApp({
       credential: cert(serviceAccount),
+      projectId: projectId || undefined,
     });
     console.log('[Firebase] ✓ Admin SDK initialized');
-    console.log(`[Firebase]   project: ${serviceAccount.project_id}`);
+    console.log(`[Firebase]   project: ${projectId}`);
     console.log(`[Firebase]   service account: ${serviceAccount.client_email}`);
   } else {
     firebaseApp = getApps()[0];
+    projectId = firebaseApp.options.projectId || projectId;
     console.log('[Firebase] ✓ Admin SDK already initialized (reusing existing app)');
   }
 } catch (err) {
@@ -43,7 +47,7 @@ export function getMessagingInstance() {
 export function getFirebaseStatus() {
   return {
     initialized: firebaseApp !== null,
-    projectId: firebaseApp ? firebaseApp.options.projectId : null,
+    projectId: projectId || (firebaseApp ? firebaseApp.options.projectId : null),
     messaging: getMessagingInstance() !== null ? 'up' : 'n/a',
     error: initError ? initError.message : null,
   };

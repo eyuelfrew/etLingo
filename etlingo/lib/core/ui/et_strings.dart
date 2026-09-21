@@ -1,15 +1,22 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 /// Bilingual product chrome (nav, buttons, empty states).
 /// Learning content still follows the learner's base language.
+/// UI buttons follow **app language** (English / Amharic).
 class EtStrings {
   static String _lang = 'en';
+
+  /// Value changes when app language changes — widgets listen and rebuild.
+  static final ValueNotifier<String> langNotifier = ValueNotifier<String>(_lang);
 
   static String get lang => _lang;
   static bool get isAmharic => _lang == 'am';
 
   static void setLang(String code) {
-    _lang = (code == 'am') ? 'am' : 'en';
+    final next = (code == 'am') ? 'am' : 'en';
+    if (next == _lang) return;
+    _lang = next;
+    langNotifier.value = next;
   }
 
   static String _t(String en, String am) => _lang == 'am' ? am : en;
@@ -45,7 +52,7 @@ class EtStrings {
       );
   static String get pullToRefresh => _t('Pull to refresh', 'ለማደስ ይጎትቱ');
 
-  // Lesson
+  // Lesson / quiz buttons — MUST follow app language
   static String get check => _t('Check', 'አረጋግጥ');
   static String get continueLabel => _t('Continue', 'ቀጥል');
   static String get gotIt => _t('Got it →', 'ተረድቻለሁ →');
@@ -62,18 +69,29 @@ class EtStrings {
         'Progress in this lesson will be lost.',
         'በዚህ ትምህርት ውስጥ ያለው እድገት ይጠፋል።',
       );
+  static String get leaveTeachBody => _t(
+        "You haven't finished learning these words yet.",
+        'እነዚህን ቃላት ማጥናት አልተጠናቀቀም።',
+      );
   static String get keepLearning => _t('Keep learning', 'መማር አቀጥል');
   static String get quit => _t('Quit', 'ውጣ');
   static String get outOfHearts => _t('Out of hearts!', 'ልቦች ተጠፍተዋል!');
+  static String get outOfHeartsBody => _t(
+        'You ran out of hearts. Refill free and keep learning!',
+        'ልቦችዎ ተጠፍተዋል። ነጻ ሞላተው መማር ይቀጥሉ!',
+      );
   static String get refillHearts => _t('Refill hearts ♥', 'ልቦችን ሞላ ♥');
   static String get correct => _t('Perfect!', 'ጎበዝ!');
   static String get notQuite => _t('Not quite…', 'አልተሳካም…');
   static String get correctAnswer => _t('Correct answer', 'ትክክለኛው መልስ');
   static String get noQuestions => _t('No questions yet', 'ጥያቄዎች አልተዘጋጁም');
   static String get tapToListen => _t('Tap to listen', 'ለማዳመጥ ይንኩ');
-  static String get swipeNext => _t('Swipe for the next word', 'ቀጥሎ ለማየት ይጎትቱ');
+  static String get swipeNext =>
+      _t('Swipe for the next word', 'ቀጥሎ ለማየት ይጎትቱ');
   static String get readyQuiz =>
       _t('Ready to test what you learned?', 'የተማሩትን ለመፈተሽ ዝግጁ ነዎት?');
+  static String get mistakesLabel => _t('mistakes', 'ስህተት');
+  static String get backToPath => _t('Back to path', 'ወደ መንገዱ ተመለስ');
 
   // Teaching
   static String get newWords => _t('New words', 'አዲስ ቃላት');
@@ -95,7 +113,8 @@ class EtStrings {
   // Profile
   static String get profile => _t('Profile', 'መገለጫ');
   static String get yourName => _t('Your name', 'የእርስዎ ስም');
-  static String get nameHint => _t('How should we call you?', 'እንዴት ልንጽልዎት?');
+  static String get nameHint =>
+      _t('How should we call you?', 'እንዴት ልንጽልዎት?');
   static String get save => _t('Save', 'አስቀምጥ');
   static String get cancel => _t('Cancel', 'ሰርዝ');
   static String get signOut => _t('Sign out', 'ውጣ');
@@ -104,7 +123,8 @@ class EtStrings {
         'Your progress is saved on the server and will be here when you return.',
         'እድገትዎ በሰርቨሩ ላይ ይቀመጣል — በተመለሱ ጊዜ እዚሁ ይገኛል።',
       );
-  static String get resetProgress => _t('Reset progress', 'እድገትን ዳግም አስጀምር');
+  static String get resetProgress =>
+      _t('Reset progress', 'እድገትን ዳግም አስጀምር');
   static String get notifications => _t('Notifications', 'ማሳወቂያዎች');
   static String get notificationSettings =>
       _t('Notification settings', 'የማሳወቂያ ቅንብሮች');
@@ -119,6 +139,30 @@ class EtStrings {
   static String get badges => _t('Badges', 'ሜዳልያዎች');
   static String get settingsTitle => _t('SETTINGS', 'ቅንብሮች');
 
+  // Curriculum catalog
+  static String get chooseLesson => _t('Choose a lesson', 'ትምህርት ይምረጡ');
+  static String get chooseLessonSub => _t(
+        'Browse chapters and pick what you want to learn next.',
+        'ክፍሎችን ይመልከቱ፤ የሚማሩትን ይምረጡ።',
+      );
+  static String get continuePath =>
+      _t('Continue learning path', 'የመማር ጉዞዎን ይቀጥሉ');
+  static String get chapter => _t('Chapter', 'ክፍል');
+  static String get vocabWords => _t('words', 'ቃላት');
+  static String get quizQuestions => _t('questions', 'ጥያቄዎች');
+  static String get lockedHint =>
+      _t('Finish the previous lesson first', 'ቀድሞ ያለውን ትምህርት ያጠናቅቁ');
+  static String get premiumSoon =>
+      _t('Premium lesson — coming soon', 'የክፍያ ትምህርት — በቅርቡ');
+  static String get browseLessons =>
+      _t('Browse chapters & lessons', 'ክፍሎችና ትምህርቶችን ይመልከቱ');
+  static String get noLessonsYet => _t('No lessons yet', 'ትምህርቶች አልተገኙም');
+  static String get noLessonsYetSub => _t(
+        'Admins are building this course. Pull to refresh on Learn later.',
+        'አድሚኖች ይህን ትምህርት እየዘጋጁ ነው። በኋላ ያድስዎት።',
+      );
+  static String get pathTab => _t('Path', 'መንገድ');
+
   // Auth / onboarding
   static String get welcome => _t('Welcome!', 'እንኳን ደህና መጡ!');
   static String get pickLanguage => _t(
@@ -129,24 +173,25 @@ class EtStrings {
         'Learn using the language you already know.',
         'የሚያውቁትን ቋንቋ ተጠቀም ይማሩ።',
       );
-  static String get signInGoogle => _t('Continue with Google', 'በ Google ይግቡ');
+  static String get signInGoogle =>
+      _t('Continue with Google', 'በ Google ይግቡ');
   static String get continueAsGuest =>
       _t('Or continue as guest', 'ወይም እንደ እንግዳ ይቀጥሉ');
-  static String get signInTitle => _t('Start your journey', 'ጉዞዎን ይጀምሩ');
+  static String get signInTitle =>
+      _t('Start your journey', 'ጉዞዎን ይጀምሩ');
   static String get signInSub => _t(
         'Sign in to save progress — or try as a guest.',
         'እድገትዎን ለማስቀመጥ ይግቡ — ወይም እንደ እንግዳ ይሞክሩ።',
       );
   static String get retry => _t('Retry', 'እንደገና ሞክር');
-  static String get noLanguages => _t('No languages available yet', 'ምንም ቋንቋ አልተገኘም');
+  static String get noLanguages =>
+      _t('No languages available yet', 'ምንም ቋንቋ አልተገኘም');
   static String get needApi => _t(
         'Cannot reach the server. Please try again.',
         'ሰርቨሩ አልተገኘም። እባክዎ እንደገና ይሞክሩ።',
       );
-  static String get chooseBase => _t(
-        'Language you already speak',
-        'የሚያውቁት ቋንቋ',
-      );
+  static String get chooseBase =>
+      _t('Language you already speak', 'የሚያውቁት ቋንቋ');
   static String get chooseBaseSub => _t(
         'Prompts and meanings appear in this language',
         'ትርጉሞች በዚህ ቋንቋ ይታያሉ',
@@ -154,8 +199,10 @@ class EtStrings {
 
   // Misc
   static String get emptyPhrasebook => _t('No phrases yet', 'ቃላት አልተገኙም');
-  static String get emptyNotifications => _t('No notifications', 'ማሳወቂያ የለም');
-  static String get goalComplete => _t('Daily goal complete!', 'ዕለታዊ ግብ ተጠናቋል!');
+  static String get emptyNotifications =>
+      _t('No notifications', 'ማሳወቂያ የለም');
+  static String get goalComplete =>
+      _t('Daily goal complete!', 'ዕለታዊ ግብ ተጠናቋል!');
   static String get xpEarned => _t('XP earned', 'የተገኘ XP');
   static String get dayStreak => _t('Day streak', 'ቀን ተከታታይ');
   static String get lessonsDone => _t('Lessons done', 'የተጠናቁ ትምህርቶች');
@@ -163,10 +210,8 @@ class EtStrings {
   static String get signInToSave =>
       _t('Sign in to save your progress', 'እድገትዎን ለማስቀመጥ ይግቡ');
   static String get baseSetTo => _t('Base language set to', 'የማስታወሻ ቋንቋ');
-  static String get appLangSetTo => _t('App language set to', 'የአፕ ቋንቋ ተቀይሯል');
+  static String get appLangSetTo =>
+      _t('App language set to', 'የአፕ ቋንቋ ተቀይሯል');
 }
 
-/// Convenience alias used across screens.
 typedef EtS = EtStrings;
-
-ThemeData unusedThemeGuard() => ThemeData();

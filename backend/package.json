@@ -8,13 +8,15 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "db:init": "node scripts/db-init.js",
-    "db:migrate": "node scripts/db-migrate.js"
+    "db:migrate": "node scripts/db-migrate.js",
+    "db:reset-content": "node scripts/db-reset-content.mjs && node scripts/seed-clean-model.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.7.0",
     "firebase-admin": "^14.3.0",
     "helmet": "^8.3.0",
     "ioredis": "^6.0.0",

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/et_strings.dart';
 import '../../core/widgets/tibeb_band.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../home/curriculum_screen.dart';
 
 class LanguagePickerScreen extends StatefulWidget {
   final AppState state;
@@ -40,9 +42,30 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
         state: widget.state,
         onDone: () {
           Navigator.of(ctx).pop();
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/home');
-          }
+          if (!mounted) return;
+          // After language + base language, let the user pick a chapter/lesson
+          // (or continue the guided path) instead of dumping them on the path.
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                appBar: AppBar(
+                  title: Text(widget.state.language.nativeName),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushReplacementNamed('/home');
+                      },
+                      child: Text(EtStrings.pathTab),
+                    ),
+                  ],
+                ),
+                body: CurriculumScreen(
+                  state: widget.state,
+                  showPathCta: true,
+                ),
+              ),
+            ),
+          );
         },
       ),
     );
@@ -57,19 +80,20 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 28),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'እንኳን ደህና መጡ!',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                    EtStrings.welcome,
+                    style: const TextStyle(
+                        fontSize: 26, fontWeight: FontWeight.w800),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    'የትኛውን የኢትዮጵያ ቋንቋ መማር ይፈልጋሉ?\nLearn Ethiopian languages using the language you already know.',
-                    style: TextStyle(
+                    '${EtStrings.pickLanguage}\n${EtStrings.pickLanguageSub}',
+                    style: const TextStyle(
                       fontSize: 13.5,
                       color: EtColors.muted,
                       height: 1.45,

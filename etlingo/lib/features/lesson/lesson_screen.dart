@@ -72,6 +72,13 @@ class _LessonScreenState extends State<LessonScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: EtStrings.langNotifier,
+      builder: (context, _) => _buildLocalized(context),
+    );
+  }
+
+  Widget _buildLocalized(BuildContext context) {
     if (_questions.isEmpty) {
       return Scaffold(
         backgroundColor: EtColors.paper,
@@ -356,9 +363,7 @@ class _LessonScreenState extends State<LessonScreen> {
           EtStrings.outOfHearts,
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
-        content: const Text(
-          'ልቦችዎ ተጠፍተዋል። ነጻ ማሞላት ይችላሉ — መማር ይቀጥሉ!',
-        ),
+        content: Text(EtStrings.outOfHeartsBody),
         actions: [
           TextButton(
             onPressed: () {

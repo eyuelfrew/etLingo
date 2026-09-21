@@ -1,10 +1,11 @@
 import axios from 'axios';
 
-// Backend base URL — set in `admin/.env` via VITE_API_URL.
-// Fallback keeps the old relative path working if the var is missing.
+// Default to the Vite proxy (/api/v1 → backend :5050) to avoid CORS in local dev.
 const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
-export const apiOrigin = API_URL.replace(/\/api\/v\d+\/?$/, '');
+export const apiOrigin = API_URL.startsWith('http')
+  ? API_URL.replace(/\/api\/v\d+\/?$/, '')
+  : window.location.origin;
 
 const client = axios.create({ baseURL: API_URL });
 
@@ -25,5 +26,17 @@ client.interceptors.response.use(
     return Promise.reject(err);
   },
 );
+
+export function apiError(err, fallback = 'Request failed') {
+  return (
+    err?.response?.data?.error ||
+    err?.response?.data?.message ||
+    (err?.code === 'ERR_NETWORK'
+      ? 'Cannot reach the backend on :5050 — is `npm run dev` running in backend/?'
+      : null) ||
+    err?.message ||
+    fallback
+  );
+}
 
 export default client;

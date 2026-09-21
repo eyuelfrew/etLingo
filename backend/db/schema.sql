@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS units (
   dark_hex CHAR(7) NOT NULL DEFAULT '#056B24',
   icon VARCHAR(64) DEFAULT 'waving_hand_rounded',
   sort_order INT NOT NULL DEFAULT 0,
+  teach_content JSON NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (language_id) REFERENCES languages(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS lessons (
   is_boss TINYINT(1) NOT NULL DEFAULT 0,
   xp_reward INT NOT NULL DEFAULT 10,
   teach_content JSON NULL,
+  resources JSON NULL,
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE CASCADE

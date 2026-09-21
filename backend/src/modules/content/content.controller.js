@@ -71,9 +71,9 @@ const languages = makeCrud(Language,
   },
 );
 
-const units = makeCrud(Unit, ['language_id', 'title', 'subtitle', 'color_hex', 'dark_hex', 'icon', 'sort_order']);
+const units = makeCrud(Unit, ['language_id', 'title', 'subtitle', 'color_hex', 'dark_hex', 'icon', 'sort_order'], ['teach_content']);
 
-const lessons = makeCrud(Lesson, ['unit_id', 'title', 'is_boss', 'xp_reward', 'sort_order'], ['teach_content'], {
+const lessons = makeCrud(Lesson, ['unit_id', 'title', 'is_boss', 'xp_reward', 'sort_order'], ['teach_content', 'resources'], {
   // New lesson published → announce it with its language for context.
   afterCreate: async (row) => {
     const unit = await Unit.findByPk(row.unit_id);
@@ -176,9 +176,17 @@ export async function bootstrap(req, res) {
 
   const unitsOut = unitsList.map(u => {
     const r = u.toJSON();
-    return { ...r, colorHex: r.color_hex, darkHex: r.dark_hex };
+    return {
+      ...r,
+      colorHex: r.color_hex,
+      darkHex: r.dark_hex,
+      teachContent: r.teach_content || [],
+    };
   });
-  unitsOut.forEach(u => { delete u.color_hex; delete u.dark_hex; delete u.language_id; delete u.sort_order; delete u.created_at; });
+  unitsOut.forEach(u => {
+    delete u.color_hex; delete u.dark_hex; delete u.language_id;
+    delete u.sort_order; delete u.created_at; delete u.teach_content;
+  });
 
   const lessonsOut = lessonsList.map(l => {
     const r = l.toJSON();
@@ -187,10 +195,14 @@ export async function bootstrap(req, res) {
       isBoss: r.is_boss,
       xpReward: r.xp_reward,
       teachContent: r.teach_content || [],
+      resources: r.resources || [],
       unitId: r.unit_id,
     };
   });
-  lessonsOut.forEach(l => { delete l.is_boss; delete l.xp_reward; delete l.teach_content; delete l.unit_id; delete l.sort_order; delete l.created_at; });
+  lessonsOut.forEach(l => {
+    delete l.is_boss; delete l.xp_reward; delete l.teach_content;
+    delete l.resources; delete l.unit_id; delete l.sort_order; delete l.created_at;
+  });
 
   const questionsOut = questionsList.map(q => {
     const r = q.toJSON();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/et_strings.dart';
 import '../../core/widgets/tibeb_band.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -132,7 +133,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     ),
                     child: Center(
                       child: Text(
-                        _page < 2 ? 'Continue' : 'Get Started',
+                        _page < 2
+                            ? EtStrings.continueLabel
+                            : EtStrings.signInTitle,
                         style: const TextStyle(
                           color: Color(0xFF1A1408),
                           fontWeight: FontWeight.w800,

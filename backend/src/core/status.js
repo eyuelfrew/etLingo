@@ -5,6 +5,7 @@ let mysqlHint = '';
 let redisStatus = 'checking';
 let redisHint = '';
 let logged = false;
+let lastLoggedRedis = null;
 
 export function getMysqlStatus() { return mysqlStatus; }
 export function getRedisStatus() { return redisStatus; }
@@ -33,17 +34,24 @@ async function checkMysql() {
 
 async function checkRedis() {
   try {
-    const { default: redis, redisEnabled } = await import('./redis.js');
+    const mod = await import('./redis.js');
+    const pingRedis = mod.pingRedis;
+    const redisEnabled = mod.redisEnabled;
+    const redis = mod.default;
+
     if (!redisEnabled || !redis) {
       redisStatus = 'disabled';
       redisHint = '';
       return;
     }
-    // Only a fully established connection counts. ioredis reports
-    // 'connecting'/'reconnecting' forever while Redis is down, which used to
-    // be misread as UP.
-    if (redis.status === 'ready') {
+
+    // Live PING — boot races (lazyConnect still connecting) no longer look like offline.
+    const result = await pingRedis();
+    if (result === 'up') {
       redisStatus = 'up';
+      redisHint = '';
+    } else if (result === 'disabled') {
+      redisStatus = 'disabled';
       redisHint = '';
     } else {
       redisStatus = 'down';
@@ -70,8 +78,11 @@ function desc(label, status, hint) {
 }
 
 export function logStatus() {
-  if (!logged) {
+  const line = `[db] ${desc('MySQL', mysqlStatus, mysqlHint)} | ${desc('Redis', redisStatus, redisHint)}`;
+  // Log boot once, then log again whenever Redis recovers/changes.
+  if (!logged || redisStatus !== lastLoggedRedis) {
     logged = true;
-    console.log(`[db] ${desc('MySQL', mysqlStatus, mysqlHint)} | ${desc('Redis', redisStatus, redisHint)}`);
+    lastLoggedRedis = redisStatus;
+    console.log(line);
   }
 }

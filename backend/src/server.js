@@ -6,12 +6,16 @@ import helmet from 'helmet';
 import routes from './routes/index.js';
 import { errorHandler } from './core/http.js';
 import { requestLogger } from './core/logger.js';
+import { globalLimiter } from './middlewares/rateLimiter.js';
 import { checkStatus, logStatus, getMysqlStatus, getRedisStatus } from './core/status.js';
 import { getFirebaseStatus } from './core/firebase.js';
 import { startCampaignWorker } from './modules/notifications/notifications.runner.js';
 import { logFcmAvailability } from './modules/notifications/notifications.push.js';
 
 const app = express();
+
+// Global rate limit — 100 req/min per IP
+app.use(globalLimiter);
 
 // Security headers (helmet). CSP is disabled — this is a JSON API, not a page.
 app.use(helmet({
@@ -20,10 +24,22 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// CORS — allow the admin frontend origin (local dev + deployable via ADMIN_URL).
-const adminOrigin = process.env.ADMIN_URL || 'http://localhost:5173';
+// CORS — admin console (local + configured). Proxy same-origin requests skip CORS.
+const allowedOrigins = new Set(
+  [
+    process.env.ADMIN_URL || 'http://localhost:5173',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
+  ].filter(Boolean),
+);
 app.use(cors({
-  origin: adminOrigin,
+  origin(origin, callback) {
+    // Allow non-browser tools (no Origin header) and known admin origins.
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(null, false);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -76,7 +92,11 @@ app.listen(PORT, async () => {
   await checkStatus();
   logStatus();
   logFcmAvailability();
-  setInterval(async () => { await checkStatus(); }, 30_000);
+  // Re-check periodically; logStatus reprints when Redis comes up after boot race.
+  setInterval(async () => {
+    await checkStatus();
+    logStatus();
+  }, 10_000);
 
   // Campaign worker — delivers scheduled notification rounds to learners.
   if (process.env.DISABLE_CAMPAIGN_WORKER !== '1') {

@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Languages from './pages/Languages';
+import BaseLanguages from './pages/BaseLanguages';
 import Lessons from './pages/Lessons';
 import Phrases from './pages/Phrases';
 import Users from './pages/Users';
@@ -31,6 +32,7 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="languages" element={<Languages />} />
+            <Route path="base-languages" element={<BaseLanguages />} />
             <Route path="lessons" element={<Lessons />} />
             <Route path="phrases" element={<Phrases />} />
             <Route path="users" element={<Users />} />

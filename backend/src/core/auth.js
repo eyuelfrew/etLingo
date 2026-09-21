@@ -1,7 +1,17 @@
 import jwt from 'jsonwebtoken';
 import { asyncHandler, unauthorized, forbidden } from './http.js';
 
-const secret = () => process.env.JWT_SECRET || 'change_me_in_production';
+const secret = () => {
+  const s = process.env.JWT_SECRET;
+  if (!s) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET is required in production — refusing to start with a weak default');
+    }
+    console.warn('⚠️  JWT_SECRET not set — using insecure fallback (development only)');
+    return 'change_me_in_production';
+  }
+  return s;
+};
 
 // ── Token issuing ─────────────────────────────────────────────────────────────
 // Two token audiences: admin console tokens and mobile app-user tokens.

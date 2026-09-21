@@ -57,10 +57,75 @@ export const unregisterFcmToken = asyncHandler(async (req, res) => {
   res.json({ ok: true });
 });
 
+async function progressPayload(user) {
+  const rows = await LessonProgress.findAll({
+    where: { app_user_id: user.id },
+    attributes: ['lesson_id'],
+  });
+  return {
+    ...toUser(user),
+    completedLessonIds: rows.map((r) => String(r.lesson_id)),
+  };
+}
+
 export const getAppProfile = asyncHandler(async (req, res) => {
   const user = await AppUser.findByPk(req.auth.sub);
   if (!user) throw unauthorized('User not found');
-  res.json(toUser(user));
+  res.json(await progressPayload(user));
+});
+
+export const getMyProgress = asyncHandler(async (req, res) => {
+  const user = await AppUser.findByPk(req.auth.sub);
+  if (!user) throw unauthorized('User not found');
+  res.json(await progressPayload(user));
+});
+
+// Lesson completion write path — powers XP / streak / hearts / unlock tree.
+export const completeLesson = asyncHandler(async (req, res) => {
+  const user = await AppUser.findByPk(req.auth.sub);
+  if (!user) throw unauthorized('User not found');
+
+  const { lessonId, mistakes = 0, xpEarned, hearts } = req.body || {};
+  const lid = Number(lessonId);
+  if (!Number.isInteger(lid) || lid <= 0) throw badRequest('lessonId is required');
+
+  const mist = Math.max(0, Number(mistakes) || 0);
+  const earned = xpEarned != null
+    ? Math.max(0, Number(xpEarned) || 0)
+    : (mist === 0 ? 15 : 10);
+
+  const [, created] = await LessonProgress.findOrCreate({
+    where: { app_user_id: user.id, lesson_id: lid },
+    defaults: { mistakes: mist, xp_earned: earned, completed_at: new Date() },
+  });
+
+  // Day-based streak using server timezone date.
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = yesterday.toISOString().slice(0, 10);
+  const lastStr = user.last_active_date
+    ? new Date(user.last_active_date).toISOString().slice(0, 10)
+    : null;
+
+  let streak = Number(user.streak) || 0;
+  if (lastStr !== dateStr) {
+    streak = lastStr === yStr ? streak + 1 : 1;
+  }
+
+  const patch = {
+    xp: (Number(user.xp) || 0) + (created ? earned : 0),
+    streak,
+    last_active_date: dateStr,
+  };
+  if (hearts !== undefined) {
+    patch.hearts = Math.max(0, Math.min(5, Number(hearts) || 0));
+  }
+
+  await user.update(patch);
+  console.log(`[progress] user #${user.id} completed lesson ${lid} (+${created ? earned : 0} xp, streak ${streak})`);
+  res.json(await progressPayload(user));
 });
 
 export const updateAppProfile = asyncHandler(async (req, res) => {

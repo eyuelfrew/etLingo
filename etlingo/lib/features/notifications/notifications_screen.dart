@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/et_strings.dart';
 import '../../services/auth_service.dart';
 import '../../services/content_service.dart';
 
@@ -89,7 +90,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Got it',
+            child: Text(EtStrings.gotIt,
                 style: TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],

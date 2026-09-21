@@ -1,11 +1,79 @@
 @import "tailwindcss";
 
+/* etLingo Admin — design tokens
+   canvas parchment + emerald identity, aligned with the Flutter learner app. */
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Noto Sans Ethiopic", "Segoe UI", system-ui, sans-serif;
+  --font-ethiopic: "Noto Sans Ethiopic", "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+
+  --color-canvas: #f4f1ea;
+  --color-panel: #ffffff;
+  --color-ink: #1a140e;
+  --color-muted: #7a7264;
+  --color-line: #e4dcc8;
+  --color-line-soft: #efe8d8;
+
+  --color-et-green: #078930;
+  --color-et-green-dark: #056b24;
+  --color-et-green-deep: #0b1a12;
+  --color-et-green-soft: #e8f5ec;
+  --color-et-yellow: #f7c60a;
+  --color-et-yellow-dark: #c99e00;
+  --color-et-red: #da121a;
+  --color-et-blue: #0f47af;
+
+  --color-sidebar: #0b1a12;
+  --color-sidebar-text: #b7c4ba;
+  --color-sidebar-active: #12301f;
+}
+
 :root {
   --et-green: #078930;
   --et-yellow: #f7c60a;
   --et-red: #da121a;
+  --et-ink: #1a140e;
+  --et-canvas: #f4f1ea;
+}
+
+html,
+body,
+#root {
+  height: 100%;
 }
 
 body {
-  @apply bg-stone-100 text-stone-800 antialiased;
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ethiopic content samples / native names */
+.font-ethiopic {
+  font-family: var(--font-ethiopic);
+}
+
+/* Consistent focus ring for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-et-green);
+  outline-offset: 2px;
+}
+
+/* Slim scrollbars in dense admin tables */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cfc6b0 transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

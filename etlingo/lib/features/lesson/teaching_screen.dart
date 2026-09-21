@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/et_strings.dart';
 import '../../core/widgets/et_button.dart';
 import '../../data/models.dart';
 import '../../services/audio_service.dart';
@@ -76,20 +77,21 @@ class _TeachingScreenState extends State<TeachingScreen> {
     final leave = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: EtColors.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Text('Leave lesson?',
-            style: TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text('You haven\'t finished learning these words yet.'),
+        title: Text(EtStrings.leaveLesson,
+            style: const TextStyle(fontWeight: FontWeight.w800)),
+        content: Text(EtStrings.leaveTeachBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep learning',
-                style: TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(EtStrings.keepLearning,
+                style: const TextStyle(fontWeight: FontWeight.w800)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Quit',
-                style: TextStyle(
+            child: Text(EtStrings.quit,
+                style: const TextStyle(
                     color: EtColors.red, fontWeight: FontWeight.w800)),
           ),
         ],
@@ -100,8 +102,16 @@ class _TeachingScreenState extends State<TeachingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: EtStrings.langNotifier,
+      builder: (context, _) => _buildLocalized(context),
+    );
+  }
+
+  Widget _buildLocalized(BuildContext context) {
     if (_items.isEmpty) {
       return Scaffold(
+        backgroundColor: EtColors.paper,
         body: SafeArea(
           child: Center(
             child: Column(
@@ -110,12 +120,12 @@ class _TeachingScreenState extends State<TeachingScreen> {
                 const Icon(Icons.school_rounded,
                     size: 58, color: EtColors.locked),
                 const SizedBox(height: 16),
-                const Text('ትምህርቱ አልተዘጋጀም',
-                    style:
-                        TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+                Text(EtStrings.noQuestions,
+                    style: const TextStyle(
+                        fontSize: 19, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 6),
                 Text(
-                  '"${widget.lesson.title}" ቃላት የሉትም።\nወደ ፈተና እየሄድን ነው!',
+                  '"${widget.lesson.title}"\n${EtStrings.noContentYet}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       fontSize: 13,
@@ -125,7 +135,7 @@ class _TeachingScreenState extends State<TeachingScreen> {
                 ),
                 const SizedBox(height: 22),
                 EtButton(
-                  'ፈተና ጀምር',
+                  EtStrings.startQuiz,
                   icon: Icons.play_arrow_rounded,
                   onPressed: _startQuiz,
                 ),
@@ -245,16 +255,14 @@ class _TeachingScreenState extends State<TeachingScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           EtButton(
-            _isLast ? 'ፈተና ጀምር 🎯' : 'ተረድቻለሁ →',
+            _isLast ? EtStrings.startQuiz : EtStrings.gotIt,
             icon: _isLast ? Icons.quiz_rounded : Icons.check_circle_outline_rounded,
             style: _isLast ? EtStyle.gold : EtStyle.primary,
             onPressed: _next,
           ),
           const SizedBox(height: 8),
           Text(
-            _isLast
-                ? 'የተማሩትን ለመፈተሽ ዝግጁ ነዎት?'
-                : 'ቀጥሎ ለማየት ይጎትቱ',
+            _isLast ? EtStrings.readyQuiz : EtStrings.swipeNext,
             style: TextStyle(
               color: EtColors.muted.withValues(alpha: 0.8),
               fontSize: 12,

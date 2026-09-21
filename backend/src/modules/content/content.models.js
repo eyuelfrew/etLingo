@@ -32,6 +32,8 @@ export const Unit = sequelize.define('Unit', {
   dark_hex: { type: DataTypes.CHAR(7), defaultValue: '#056B24' },
   icon: { type: DataTypes.STRING(64), defaultValue: 'waving_hand_rounded' },
   sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
+  // Chapter-level vocabulary — authored once, reused by every lesson in the unit.
+  teach_content: { type: DataTypes.JSON, allowNull: true },
 }, { tableName: 'units' });
 
 export const Lesson = sequelize.define('Lesson', {
@@ -41,6 +43,8 @@ export const Lesson = sequelize.define('Lesson', {
   is_boss: { type: DataTypes.BOOLEAN, defaultValue: false },
   xp_reward: { type: DataTypes.INTEGER, defaultValue: 10 },
   teach_content: { type: DataTypes.JSON, allowNull: true },
+  // Lesson file resources: [{ kind: 'pdf'|'audio'|'image', url, title }]
+  resources: { type: DataTypes.JSON, allowNull: true },
   sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { tableName: 'lessons' });
 

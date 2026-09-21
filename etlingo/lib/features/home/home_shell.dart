@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/ui/et_strings.dart';
 import '../../core/widgets/et_bottom_nav.dart';
 import '../../state/app_state.dart';
 import 'learn_path_screen.dart';
@@ -26,14 +27,15 @@ class _HomeShellState extends State<HomeShell> {
       ProfileScreen(state: widget.state),
     ];
 
-    return Scaffold(
-      body: AnimatedBuilder(
-        animation: widget.state,
-        builder: (context, _) => IndexedStack(index: _tab, children: pages),
-      ),
-      bottomNavigationBar: EtBottomNav(
-        index: _tab,
-        onChanged: (i) => setState(() => _tab = i),
+    // Rebuild when learner progress or app language (EN/AM) changes.
+    return ListenableBuilder(
+      listenable: Listenable.merge([widget.state, EtStrings.langNotifier]),
+      builder: (context, _) => Scaffold(
+        body: IndexedStack(index: _tab, children: pages),
+        bottomNavigationBar: EtBottomNav(
+          index: _tab,
+          onChanged: (i) => setState(() => _tab = i),
+        ),
       ),
     );
   }

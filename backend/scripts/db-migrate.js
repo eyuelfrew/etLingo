@@ -19,6 +19,8 @@ const COLUMNS = [
   { table: 'questions', column: 'audio_url', clause: "audio_url VARCHAR(255) NOT NULL DEFAULT ''" },
   { table: 'phrases', column: 'audio_url', clause: "audio_url VARCHAR(255) NOT NULL DEFAULT ''" },
   { table: 'lessons', column: 'teach_content', clause: 'teach_content JSON NULL' },
+  { table: 'lessons', column: 'resources', clause: 'resources JSON NULL' },
+  { table: 'units', column: 'teach_content', clause: 'teach_content JSON NULL' },
   { table: 'questions', column: 'content', clause: 'content JSON NULL' },
 ];
 
@@ -152,15 +154,38 @@ export async function migrateAppUsers(connection) {
     console.log(`[db:migrate] ✓ '${name}' created`);
   }
 
-  // Seed base_languages if empty.
+  // Seed base_languages if empty (instruction languages learners already speak).
   if (await tableExists(connection, 'base_languages')) {
     const [countRows] = await connection.query('SELECT COUNT(*) AS n FROM base_languages');
     if (countRows[0].n === 0) {
       console.log('[db:migrate] seeding base_languages...');
       await connection.query(`INSERT INTO base_languages (code, name, native_name, is_active, sort_order) VALUES
         ('en', 'English', 'English', 1, 0),
-        ('am', 'Amharic', 'አማርኛ', 1, 1)`);
-      console.log('[db:migrate] ✓ base_languages seeded (en, am)');
+        ('am', 'Amharic', 'አማርኛ', 1, 1),
+        ('om', 'Afaan Oromoo', 'Afaan Oromoo', 1, 2),
+        ('ti', 'Tigrinya', 'ትግርኛ', 1, 3),
+        ('so', 'Somali', 'Soomaali', 1, 4)`);
+      console.log('[db:migrate] ✓ base_languages seeded (en, am, om, ti, so)');
+    } else {
+      // Ensure Ethiopian instruction languages exist even if table was seeded earlier with en/am only.
+      const ensure = [
+        ['om', 'Afaan Oromoo', 'Afaan Oromoo', 2],
+        ['ti', 'Tigrinya', 'ትግርኛ', 3],
+        ['so', 'Somali', 'Soomaali', 4],
+      ];
+      for (const [code, name, native_name, sort_order] of ensure) {
+        const [exists] = await connection.query(
+          'SELECT id FROM base_languages WHERE code = ? LIMIT 1',
+          [code],
+        );
+        if (!exists.length) {
+          await connection.query(
+            'INSERT INTO base_languages (code, name, native_name, is_active, sort_order) VALUES (?, ?, ?, 1, ?)',
+            [code, name, native_name, sort_order],
+          );
+          console.log(`[db:migrate] ✓ base language ${code} added`);
+        }
+      }
     }
   }
 

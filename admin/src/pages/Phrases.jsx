@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import client from '../api/client';
 import AudioField from '../components/AudioField';
+import {
+  PageHeader,
+  Button,
+  Banner,
+  Badge,
+  Field,
+  inputCls,
+  tableShellCls,
+  thCls,
+  tdCls,
+  Card,
+  EmptyState,
+} from '../components/ui';
 
 export default function Phrases() {
   const [languages, setLanguages] = useState([]);
@@ -8,7 +21,13 @@ export default function Phrases() {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState('');
 
-  const [form, setForm] = useState({ target: '', translit: '', meaning: '', category: 'Greetings', audio_url: '' });
+  const [form, setForm] = useState({
+    target: '',
+    translit: '',
+    meaning: '',
+    category: 'Basics',
+    audio_url: '',
+  });
   const [editingId, setEditingId] = useState(null);
 
   const loadLangs = useCallback(async () => {
@@ -42,7 +61,7 @@ export default function Phrases() {
     try {
       if (editingId) await client.put(`/admin/phrases/${editingId}`, form);
       else await client.post('/admin/phrases', { ...form, language_id: Number(langId) });
-      setForm({ target: '', translit: '', meaning: '', category: 'Greetings', audio_url: '' });
+      setForm({ target: '', translit: '', meaning: '', category: 'Basics', audio_url: '' });
       setEditingId(null);
       loadRows();
     } catch (err) {
@@ -52,133 +71,194 @@ export default function Phrases() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black">Phrasebook</h1>
-          <p className="mt-1 text-sm font-medium text-stone-500">
-            Words shown in the app's Words tab
-          </p>
-        </div>
-        <select
-          value={langId}
-          onChange={(e) => setLangId(e.target.value)}
-          className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-bold outline-none focus:border-green-600"
-        >
-          {languages.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.native_name} ({l.name})
-            </option>
-          ))}
-        </select>
-      </div>
+      <PageHeader
+        eyebrow="Learning content"
+        title="Phrasebook"
+        subtitle="Words learners see in the app Words tab — with optional pronunciation audio."
+        actions={
+          languages.length > 0 ? (
+            <select
+              value={langId}
+              onChange={(e) => setLangId(e.target.value)}
+              className={`${inputCls} mt-0 min-w-[220px]`}
+            >
+              {languages.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.native_name} ({l.name})
+                </option>
+              ))}
+            </select>
+          ) : null
+        }
+      />
 
       {error && (
-        <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-          ⚠ {error}
-        </p>
+        <div className="mt-5">
+          <Banner tone="warning">{error}</Banner>
+        </div>
       )}
 
       {!error && !languages.length && (
-        <p className="mt-6 rounded-2xl border border-stone-200 bg-white px-5 py-8 text-center text-sm font-semibold text-stone-400 shadow-sm">
-          Add a language first.
-        </p>
+        <div className="mt-6">
+          <EmptyState
+            icon="💬"
+            title="Add a language first"
+            hint="Phrasebook rows belong to a language course."
+          />
+        </div>
       )}
 
       {!!languages.length && (
         <>
-          <form onSubmit={save} className="mt-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-            <div className="grid grid-cols-[repeat(4,minmax(0,1fr))_auto] items-end gap-3">
-              <Input label="Word *" value={form.target} onChange={(v) => setForm({ ...form, target: v })} placeholder="ሰላም" required />
-              <Input label="Translit" value={form.translit} onChange={(v) => setForm({ ...form, translit: v })} placeholder="se·lam" />
-              <Input label="Meaning *" value={form.meaning} onChange={(v) => setForm({ ...form, meaning: v })} placeholder="Hello / Peace" required />
-              <Input label="Category" value={form.category} onChange={(v) => setForm({ ...form, category: v })} placeholder="Greetings" />
-              <button className="rounded-xl bg-green-700 px-5 py-2.5 text-sm font-black uppercase tracking-wide text-white hover:bg-green-600">
-                {editingId ? 'Update' : 'Add'}
-              </button>
-            </div>
-            <div className="mt-4 border-t border-stone-100 pt-4">
-              <AudioField
-                label="Pronunciation audio"
-                value={form.audio_url}
-                onChange={(v) => setForm({ ...form, audio_url: v })}
-              />
-            </div>
-          </form>
+          <div className="mt-6">
+            <Card
+              title={editingId ? 'Edit phrase' : 'Add phrase'}
+              description="Target word, transliteration, meaning, and category."
+            >
+              <form onSubmit={save}>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                  <Field label="Word *">
+                    <input
+                      className={`${inputCls} font-ethiopic`}
+                      value={form.target}
+                      required
+                      placeholder="ሰላም"
+                      onChange={(e) => setForm({ ...form, target: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Transliteration">
+                    <input
+                      className={inputCls}
+                      value={form.translit}
+                      placeholder="se·lam"
+                      onChange={(e) => setForm({ ...form, translit: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Meaning *">
+                    <input
+                      className={inputCls}
+                      value={form.meaning}
+                      required
+                      placeholder="Hello / Peace"
+                      onChange={(e) => setForm({ ...form, meaning: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Category">
+                    <input
+                      className={inputCls}
+                      value={form.category}
+                      placeholder="Basics"
+                      onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <div className="mt-4 border-t border-line-soft pt-4">
+                  <AudioField
+                    label="Pronunciation audio"
+                    value={form.audio_url}
+                    onChange={(v) => setForm({ ...form, audio_url: v })}
+                  />
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <Button type="submit" variant="primary">
+                    {editingId ? 'Update phrase' : 'Add phrase'}
+                  </Button>
+                  {editingId && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setEditingId(null);
+                        setForm({
+                          target: '',
+                          translit: '',
+                          meaning: '',
+                          category: 'Basics',
+                          audio_url: '',
+                        });
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </Card>
+          </div>
 
-          <div className="mt-4 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-stone-50 text-left text-xs font-black uppercase tracking-wider text-stone-400">
-                <tr>
-                  <th className="px-5 py-3">Word</th>
-                  <th className="px-4 py-3">Translit</th>
-                  <th className="px-4 py-3">Meaning</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-stone-100 hover:bg-stone-50/60">
-                    <td className="px-5 py-2.5 font-bold">
-                      {r.audio_url && <span className="mr-1 text-xs" title="Has audio">🔊</span>}
-                      {r.target}
-                    </td>
-                    <td className="px-4 py-2.5 italic text-stone-400">{r.translit}</td>
-                    <td className="px-4 py-2.5">{r.meaning}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-500">{r.category}</span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => {
-                          setEditingId(r.id);
-                          setForm({
-                            target: r.target,
-                            translit: r.translit,
-                            meaning: r.meaning,
-                            category: r.category,
-                            audio_url: r.audio_url || '',
-                          });
-                        }}
-                        className="mr-2 font-bold text-blue-700 hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={async () => {
-                          await client.delete(`/admin/phrases/${r.id}`);
-                          loadRows();
-                        }}
-                        className="font-bold text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {!rows.length && (
-                  <tr><td colSpan={5} className="px-5 py-10 text-center text-stone-400">No phrases for this language yet.</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="mt-4">
+            {rows.length === 0 ? (
+              <EmptyState
+                icon="📖"
+                title="No phrases yet"
+                hint="Add the first word for this language."
+              />
+            ) : (
+              <div className={tableShellCls}>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-line-soft">
+                      <th className={thCls}>Word</th>
+                      <th className={thCls}>Translit</th>
+                      <th className={thCls}>Meaning</th>
+                      <th className={thCls}>Category</th>
+                      <th className={`${thCls} text-right`}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.id} className="border-t border-line-soft hover:bg-canvas/60">
+                        <td className={tdCls}>
+                          <span className="font-ethiopic font-semibold">
+                            {r.audio_url && (
+                              <span className="mr-1.5 text-[12px]" title="Has audio">
+                                🔊
+                              </span>
+                            )}
+                            {r.target}
+                          </span>
+                        </td>
+                        <td className={`${tdCls} italic text-muted`}>{r.translit || '—'}</td>
+                        <td className={tdCls}>{r.meaning}</td>
+                        <td className={tdCls}>
+                          <Badge tone="neutral">{r.category}</Badge>
+                        </td>
+                        <td className={`${tdCls} text-right whitespace-nowrap`}>
+                          <button
+                            onClick={() => {
+                              setEditingId(r.id);
+                              setForm({
+                                target: r.target,
+                                translit: r.translit,
+                                meaning: r.meaning,
+                                category: r.category,
+                                audio_url: r.audio_url || '',
+                              });
+                            }}
+                            className="mr-3 text-[13px] font-semibold text-et-blue hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm('Delete this phrase?')) return;
+                              await client.delete(`/admin/phrases/${r.id}`);
+                              loadRows();
+                            }}
+                            className="text-[13px] font-semibold text-et-red hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </>
       )}
     </div>
-  );
-}
-
-function Input({ label, value, onChange, required, placeholder }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-black uppercase tracking-wider text-stone-400">{label}</span>
-      <input
-        value={value}
-        required={required}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm outline-none focus:border-green-600"
-      />
-    </label>
   );
 }

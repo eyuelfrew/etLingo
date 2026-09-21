@@ -4,7 +4,7 @@ import {
   languages, units, lessons, questions, phrases, baseLanguages,
   dashboardStats, appLanguages, bootstrap, languagePhrases, appBaseLanguages,
 } from './content.controller.js';
-import { uploadAudio } from './audio.controller.js';
+import { uploadAudio, uploadMedia } from './media.controller.js';
 
 const router = Router();
 
@@ -50,5 +50,6 @@ router.put('/admin/base-languages/:id', requireAuth, baseLanguages.update);
 router.delete('/admin/base-languages/:id', requireAuth, baseLanguages.remove);
 
 router.post('/admin/audio', requireAuth, ...uploadAudio);
+router.post('/admin/media', requireAuth, ...uploadMedia);
 
 export default router;

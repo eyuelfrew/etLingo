@@ -8,6 +8,7 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../lesson/lesson_screen.dart';
 import '../lesson/teaching_screen.dart';
+import 'curriculum_screen.dart';
 
 class LearnPathScreen extends StatelessWidget {
   final AppState state;
@@ -32,6 +33,12 @@ class LearnPathScreen extends StatelessWidget {
                   child: LinearProgressIndicator(minHeight: 2, color: EtColors.green),
                 ),
               SliverToBoxAdapter(child: _CourseHero(state: state, lang: lang)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  child: _BrowseLessonsButton(state: state),
+                ),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -63,6 +70,79 @@ class LearnPathScreen extends StatelessWidget {
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BrowseLessonsButton extends StatelessWidget {
+  final AppState state;
+  const _BrowseLessonsButton({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => CurriculumScreen(state: state),
+          ));
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: EtColors.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: EtColors.line),
+            boxShadow: EtShadows.soft,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: EtColors.blue.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.auto_stories_rounded,
+                  color: EtColors.blue,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      EtStrings.browseLessons,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: EtColors.ink,
+                      ),
+                    ),
+                    Text(
+                      EtStrings.chooseLessonSub,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: EtColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: EtColors.blue),
             ],
           ),
         ),

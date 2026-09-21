@@ -20,28 +20,33 @@ class EtLangApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState?>();
-    final locale = Locale(state?.appLanguage ?? EtStrings.lang);
-    return MaterialApp(
-      navigatorKey: appNavigatorKey,
-      title: 'ኢትLang — Learn Ethiopian Languages',
-      debugShowCheckedModeBanner: false,
-      locale: locale,
-      supportedLocales: const [
-        Locale('en'),
-        Locale('am'),
-      ],
-      theme: buildEtTheme(),
-      initialRoute: '/',
-      routes: {
-        '/': (_) => const SplashScreen(),
-        '/onboarding': (_) => const OnboardingScreen(),
-        '/signin': (_) => const GoogleSignInScreen(),
-        '/pick': (_) => Consumer<AppState>(
-              builder: (_, state, unused) => LanguagePickerScreen(state: state),
-            ),
-        '/home': (_) => Consumer<AppState>(
-              builder: (_, state, unused) => HomeShell(state: state),
-            ),
+    // Rebuild whole tree when app language (EN/AM) changes via Profile setting.
+    return ListenableBuilder(
+      listenable: EtStrings.langNotifier,
+      builder: (context, _) {
+        return MaterialApp(
+          navigatorKey: appNavigatorKey,
+          title: 'ኢትLang — Learn Ethiopian Languages',
+          debugShowCheckedModeBanner: false,
+          locale: Locale(state?.appLanguage ?? EtStrings.lang),
+          supportedLocales: const [
+            Locale('en'),
+            Locale('am'),
+          ],
+          theme: buildEtTheme(),
+          initialRoute: '/',
+          routes: {
+            '/': (_) => const SplashScreen(),
+            '/onboarding': (_) => const OnboardingScreen(),
+            '/signin': (_) => const GoogleSignInScreen(),
+            '/pick': (_) => Consumer<AppState>(
+                  builder: (_, state, unused) => LanguagePickerScreen(state: state),
+                ),
+            '/home': (_) => Consumer<AppState>(
+                  builder: (_, state, unused) => HomeShell(state: state),
+                ),
+          },
+        );
       },
     );
   }
