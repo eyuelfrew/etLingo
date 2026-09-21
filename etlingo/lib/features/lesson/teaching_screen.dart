@@ -10,12 +10,15 @@ class TeachingScreen extends StatefulWidget {
   final AppState state;
   final Lesson lesson;
   final Unit unit;
+  /// Unit chapter vocab + lesson extras. When null, uses lesson.teachItems only.
+  final List<TeachItem>? teachItemsOverride;
 
   const TeachingScreen({
     super.key,
     required this.state,
     required this.lesson,
     required this.unit,
+    this.teachItemsOverride,
   });
 
   @override
@@ -39,7 +42,9 @@ class _TeachingScreenState extends State<TeachingScreen> {
     super.dispose();
   }
 
-  List<TeachItem> get _items => widget.lesson.teachItems;
+  List<TeachItem> get _items =>
+      widget.teachItemsOverride ??
+      widget.unit.teachItemsFor(widget.lesson);
   bool get _isLast => _page == _items.length - 1;
 
   void _next() {
@@ -105,12 +110,12 @@ class _TeachingScreenState extends State<TeachingScreen> {
                 const Icon(Icons.school_rounded,
                     size: 58, color: EtColors.locked),
                 const SizedBox(height: 16),
-                const Text('No teach content yet',
+                const Text('ትምህርቱ አልተዘጋጀም',
                     style:
                         TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 6),
                 Text(
-                  '"${widget.lesson.title}" has no words to learn yet.\nGoing straight to quiz!',
+                  '"${widget.lesson.title}" ቃላት የሉትም።\nወደ ፈተና እየሄድን ነው!',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       fontSize: 13,
@@ -120,7 +125,7 @@ class _TeachingScreenState extends State<TeachingScreen> {
                 ),
                 const SizedBox(height: 22),
                 EtButton(
-                  'Start quiz',
+                  'ፈተና ጀምር',
                   icon: Icons.play_arrow_rounded,
                   onPressed: _startQuiz,
                 ),
@@ -240,7 +245,7 @@ class _TeachingScreenState extends State<TeachingScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           EtButton(
-            _isLast ? 'Start Quiz 🎯' : 'Got it →',
+            _isLast ? 'ፈተና ጀምር 🎯' : 'ተረድቻለሁ →',
             icon: _isLast ? Icons.quiz_rounded : Icons.check_circle_outline_rounded,
             style: _isLast ? EtStyle.gold : EtStyle.primary,
             onPressed: _next,
@@ -248,12 +253,12 @@ class _TeachingScreenState extends State<TeachingScreen> {
           const SizedBox(height: 8),
           Text(
             _isLast
-                ? 'Ready to test what you learned?'
-                : 'Swipe or tap to see the next word',
+                ? 'የተማሩትን ለመፈተሽ ዝግጁ ነዎት?'
+                : 'ቀጥሎ ለማየት ይጎትቱ',
             style: TextStyle(
-              color: EtColors.muted.withValues(alpha: 0.7),
+              color: EtColors.muted.withValues(alpha: 0.8),
               fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -285,109 +290,150 @@ class _WordCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 340),
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.fromLTRB(20, 36, 20, 28),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: unit.color.withValues(alpha: 0.12),
-              border: Border.all(
-                color: unit.color.withValues(alpha: 0.3),
-                width: 2,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  unit.color.withValues(alpha: 0.10),
+                  EtColors.card,
+                  unit.dark.withValues(alpha: 0.05),
+                ],
               ),
-            ),
-            child: Center(
-              child: Text(
-                '${index + 1}',
-                style: TextStyle(
-                  color: unit.color,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: unit.color.withValues(alpha: 0.18), width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: unit.dark.withValues(alpha: 0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
                 ),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(height: 28),
-          Text(
-            item.target,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 42,
-              fontWeight: FontWeight.w800,
-              color: EtColors.ink,
-              height: 1.2,
-            ),
-          ),
-          if (item.translit.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              item.translit,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: unit.color,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: EtColors.paper,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: EtColors.line),
-            ),
-            child: Text(
-              item.meaningFor(state.baseLanguage),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: EtColors.ink,
-              ),
-            ),
-          ),
-          if (item.audioUrl.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            GestureDetector(
-              onTap: () => AudioService.instance.play(item.audioUrl),
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: unit.color.withValues(alpha: 0.1),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: unit.color.withValues(alpha: 0.12),
+                    border: Border.all(
+                      color: unit.color.withValues(alpha: 0.25),
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        color: unit.color,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  Icons.volume_up_rounded,
-                  color: unit.color,
-                  size: 26,
+                const SizedBox(height: 22),
+                Text(
+                  item.target,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 44,
+                    fontWeight: FontWeight.w800,
+                    color: EtColors.ink,
+                    height: 1.15,
+                  ),
                 ),
-              ),
+                if (item.translit.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    item.translit,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: unit.color,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: EtColors.paper,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: EtColors.line),
+                  ),
+                  child: Text(
+                    item.meaningFor(state.baseLanguage),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: EtColors.ink,
+                    ),
+                  ),
+                ),
+                if (item.audioUrl.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  GestureDetector(
+                    onTap: () => AudioService.instance.play(item.audioUrl),
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [unit.color, unit.dark],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: unit.dark.withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.volume_up_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 22),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(total, (i) {
+                    final active = i == index;
+                    final seen = i <= index;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: active ? 24 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: active
+                            ? unit.color
+                            : seen
+                                ? unit.color.withValues(alpha: 0.4)
+                                : EtColors.line,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    );
+                  }),
+                ),
+              ],
             ),
-          ],
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(total, (i) {
-              final active = i == index;
-              final seen = i <= index;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: active ? 24 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: active
-                      ? unit.color
-                      : seen
-                          ? unit.color.withValues(alpha: 0.4)
-                          : EtColors.line,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              );
-            }),
           ),
         ],
       ),

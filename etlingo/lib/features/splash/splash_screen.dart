@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/et_strings.dart';
 import '../../core/widgets/tibeb_band.dart';
 import '../../services/auth_service.dart';
 import '../../state/app_state.dart';
@@ -35,7 +36,11 @@ class _SplashScreenState extends State<SplashScreen>
       final restored = await state.restoreSavedLanguage();
       if (!mounted) return;
       unawaited(state.loadLanguages());
-      unawaited(auth.refreshProfile());
+      unawaited(state.loadBaseLanguages());
+      unawaited(() async {
+        await auth.refreshProfile();
+        await state.syncProgressFromServer();
+      }());
       // Re-attach this device to push (persisted sessions) and keep tokens fresh.
       auth.listenForTokenRefresh();
       unawaited(auth.registerPushToken());
@@ -102,12 +107,12 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ),
                           const SizedBox(height: 10),
-                          const Text(
-                            'Learn the languages of Ethiopia',
-                            style: TextStyle(
+                          Text(
+                            EtStrings.brandTagline,
+                            style: const TextStyle(
                               color: Colors.white70,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -126,12 +131,12 @@ class _SplashScreenState extends State<SplashScreen>
               const Padding(
                 padding: EdgeInsets.only(bottom: 26, top: 14),
                 child: Text(
-                  'Amharic · Afaan Oromo · Tigrinya · Somali',
+                  'አማርኛ · Afaan Oromoo · ትግርኛ · Soomaali',
                   style: TextStyle(
                     color: Color(0x99FFFFFF),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ),

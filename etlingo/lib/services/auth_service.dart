@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'api_client.dart';
 import 'content_service.dart';
 import 'push_notification_service.dart';
 
@@ -181,22 +180,30 @@ class AuthService extends ChangeNotifier {
     PushNotificationService.onTokenRefresh().listen((_) => registerPushToken());
   }
 
-  /// Pull the latest profile (xp/hearts/streak/name) from the backend.
-  Future<void> refreshProfile() async {
-    if (_token == null) return;
+  /// Latest profile + gamification from the backend.
+  Future<Map<String, dynamic>?> refreshProfile() async {
+    if (_token == null) return null;
     try {
       final data = await _api.get('/app/auth/profile');
       if (data is Map<String, dynamic>) {
         _displayName = data['displayName'] as String? ?? _displayName;
         _email = data['email'] as String? ?? _email;
+        xp = (data['xp'] as num?)?.toInt() ?? xp;
+        hearts = (data['hearts'] as num?)?.toInt() ?? hearts;
+        streak = (data['streak'] as num?)?.toInt() ?? streak;
         await _persistUser();
         notifyListeners();
+        return data;
       }
     } on ApiException catch (e) {
-      // Token expired/revoked → force a clean sign-out so the app re-auths.
       if (e.statusCode == 401) await signOut();
     }
+    return null;
   }
+
+  int xp = 0;
+  int hearts = 5;
+  int streak = 0;
 
   /// Update the user's display name on the backend.
   Future<void> updateDisplayName(String name) async {

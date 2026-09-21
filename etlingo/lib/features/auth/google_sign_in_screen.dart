@@ -132,11 +132,11 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen>
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            'Learn the languages of Ethiopia',
+                            'የኢትዮጵያ ቋንቋዎችን ይማሩ',
                             style: TextStyle(
                               color: Colors.white70,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -229,10 +229,10 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen>
                               const SizedBox(width: 12),
                             ],
                             const Text(
-                              'Continue with Google',
+                              'በ Google ይግቡ',
                               style: TextStyle(
                                 color: EtColors.ink,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 fontSize: 15.5,
                               ),
                             ),
@@ -244,11 +244,11 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen>
                     GestureDetector(
                       onTap: auth.loading ? null : _continueAsGuest,
                       child: const Text(
-                        'Or continue as guest',
+                        'ወይም እንደ እንግዳ ይቀጥሉ',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white60,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           fontSize: 13.5,
                         ),
                       ),

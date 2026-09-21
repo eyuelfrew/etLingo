@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/et_strings.dart';
 import '../../core/widgets/confetti.dart';
 import '../../core/widgets/et_button.dart';
+import '../../core/widgets/tibeb_band.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 
@@ -39,7 +41,10 @@ class _LessonResultScreenState extends State<LessonResultScreen>
   @override
   Widget build(BuildContext context) {
     final perfect = widget.mistakes == 0;
-    final earned = widget.state.lessonReward(mistakes: widget.mistakes);
+    final earned = widget.state.lessonReward(
+      mistakes: widget.mistakes,
+      xpReward: widget.lesson.xpReward,
+    );
 
     return Scaffold(
       body: Stack(
@@ -50,7 +55,8 @@ class _LessonResultScreenState extends State<LessonResultScreen>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  widget.unit.color.withValues(alpha: 0.16),
+                  widget.unit.color.withValues(alpha: 0.22),
+                  widget.unit.dark.withValues(alpha: 0.08),
                   EtColors.paper,
                 ],
               ),
@@ -62,23 +68,24 @@ class _LessonResultScreenState extends State<LessonResultScreen>
               padding: const EdgeInsets.all(24),
               child: ScaleTransition(
                 scale: CurvedAnimation(
-                    parent: _pop, curve: const Interval(0, 0.6, curve: Curves.elasticOut)),
+                    parent: _pop,
+                    curve: const Interval(0, 0.6, curve: Curves.elasticOut)),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Center(
                       child: Container(
-                        width: 108,
-                        height: 108,
+                        width: 112,
+                        height: 112,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
                               colors: [widget.unit.color, widget.unit.dark]),
                           boxShadow: [
                             BoxShadow(
-                              color: widget.unit.dark.withValues(alpha: 0.4),
-                              blurRadius: 30,
+                              color: widget.unit.dark.withValues(alpha: 0.45),
+                              blurRadius: 32,
                               offset: const Offset(0, 12),
                             ),
                           ],
@@ -88,35 +95,38 @@ class _LessonResultScreenState extends State<LessonResultScreen>
                               ? Icons.workspace_premium_rounded
                               : Icons.emoji_events_rounded,
                           color: Colors.white,
-                          size: 52,
+                          size: 54,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 26),
                     Text(
-                      perfect ? 'ጎበዝ! Flawless!' : 'Lesson complete!',
+                      perfect ? EtStrings.perfect : EtStrings.lessonDone,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                          fontSize: 25, fontWeight: FontWeight.w800),
+                          fontSize: 26, fontWeight: FontWeight.w800),
                     ),
+                    const SizedBox(height: 6),
                     Text(
                       perfect
-                          ? 'Zero mistakes — you are gobez!'
-                          : '${widget.mistakes} slip${widget.mistakes == 1 ? '' : 's'} — practice makes perfect',
+                          ? EtStrings.perfectSub
+                          : '${widget.mistakes} ስህተት · ${EtStrings.slowMotto}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                           color: EtColors.muted,
                           fontWeight: FontWeight.w600,
                           fontSize: 14),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 10),
+                    const Center(child: TibebBand(height: 14, opacity: 0.85)),
+                    const SizedBox(height: 22),
                     Row(
                       children: [
                         Expanded(
                           child: _ResultCard(
                             icon: Icons.bolt_rounded,
                             value: '+$earned',
-                            label: 'XP earned',
+                            label: EtStrings.xpEarned,
                             color: EtColors.yellowDark,
                           ),
                         ),
@@ -125,7 +135,7 @@ class _LessonResultScreenState extends State<LessonResultScreen>
                           child: _ResultCard(
                             icon: Icons.local_fire_department_rounded,
                             value: '${widget.state.streak}',
-                            label: 'Day streak',
+                            label: EtStrings.dayStreak,
                             color: const Color(0xFFFF9800),
                           ),
                         ),
@@ -134,7 +144,7 @@ class _LessonResultScreenState extends State<LessonResultScreen>
                           child: _ResultCard(
                             icon: Icons.favorite_rounded,
                             value: '${widget.state.hearts}',
-                            label: 'Hearts',
+                            label: EtStrings.hearts,
                             color: EtColors.red,
                           ),
                         ),
@@ -149,16 +159,12 @@ class _LessonResultScreenState extends State<LessonResultScreen>
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: EdgeInsets.only(
-                  left: 24,
-                  right: 24,
-                  bottom: MediaQuery.of(context).viewPadding.bottom + 20,
-                ),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
                 child: EtButton(
-                  'Keep going!',
-                  icon: Icons.arrow_forward_rounded,
-                  onPressed: () =>
-                      Navigator.of(context).popUntil((r) => r.isFirst),
+                  EtStrings.keepGoing,
+                  icon: Icons.play_arrow_rounded,
+                  style: EtStyle.primary,
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
             ),
@@ -188,22 +194,31 @@ class _ResultCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
         color: EtColors.card,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: EtColors.line, width: 1.4),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: EtColors.line),
         boxShadow: EtShadows.soft,
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 6),
-          Text(value,
-              style:
-                  const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 11,
-                  color: EtColors.muted,
-                  fontWeight: FontWeight.w800)),
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: EtColors.muted,
+            ),
+          ),
         ],
       ),
     );

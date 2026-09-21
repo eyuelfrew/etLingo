@@ -1,6 +1,6 @@
 @echo off
 
-set DEVICE=R3CN50KWWFH
+set DEVICE=d760819b
 
 adb -s %DEVICE% reverse tcp:5050 tcp:5050
 

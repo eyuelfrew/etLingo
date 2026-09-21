@@ -1,30 +1,66 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../core/ui/et_strings.dart';
 import '../data/models.dart';
-import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/content_service.dart';
 
 class AppState extends ChangeNotifier {
-  AppState([AuthService? auth]) : _content = _makeContent(auth);
+  AppState([AuthService? auth]) : _auth = auth {
+    _content = _makeContent(auth);
+    _api = auth != null
+        ? ApiClient(tokenProvider: () async => auth.token)
+        : ApiClient(tokenProvider: () async => null);
+    _loadLocalProgress();
+    _restoreAppLanguage();
+  }
+
+  Future<void> _restoreAppLanguage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_appLangKey);
+      _appLanguage = (saved == 'am') ? 'am' : 'en';
+      EtStrings.setLang(_appLanguage);
+      notifyListeners();
+    } catch (_) {
+      EtStrings.setLang('en');
+    }
+  }
+
+  /// Switch UI chrome language (English / Amharic). Persisted on device.
+  Future<void> chooseAppLanguage(String code) async {
+    _appLanguage = (code == 'am') ? 'am' : 'en';
+    EtStrings.setLang(_appLanguage);
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_appLangKey, _appLanguage);
+    } catch (_) {}
+  }
 
   static ContentService _makeContent(AuthService? auth) {
     if (auth != null) return auth.content;
-    // Standalone mode (tests / guest): course endpoints are public.
     return ContentService(ApiClient(tokenProvider: () async => null));
   }
 
-  final ContentService _content;
+  final AuthService? _auth;
+  late final ContentService _content;
+  late final ApiClient _api;
 
   Language _language = _emptyLanguage;
   List<Language> _languages = const [];
+  List<BaseLanguageOption> _baseLanguages = BaseLanguageOption.defaults;
   final Set<String> _completedLessons = {};
   int _xp = 0;
   int _xpToday = 0;
   int _hearts = 5;
-  final int _streak = 0;
+  int _streak = 0;
   bool _onboarded = false;
   String _baseLanguage = 'en';
+  String _appLanguage = 'en';
 
   bool _loadingLanguages = false;
   bool _loadingContent = false;
@@ -32,10 +68,15 @@ class AppState extends ChangeNotifier {
 
   static const String _langKey = 'etlingo_language';
   static const String _baseLangKey = 'etlingo_base_language';
+  static const String _appLangKey = 'etlingo_app_language';
+  static const String _progressKey = 'etlingo_local_progress';
 
   Language get language => _language;
   List<Language> get languages => _languages;
+  List<BaseLanguageOption> get baseLanguages => _baseLanguages;
   String get baseLanguage => _baseLanguage;
+  /// UI chrome language: 'en' (default) or 'am'.
+  String get appLanguage => _appLanguage;
   int get xp => _xp;
   int get xpToday => _xpToday;
   int get hearts => _hearts;
@@ -45,6 +86,7 @@ class AppState extends ChangeNotifier {
   bool get loadingLanguages => _loadingLanguages;
   bool get loadingContent => _loadingContent;
   String? get error => _error;
+  bool get isSignedIn => _auth?.token != null;
 
   static const dailyGoal = 50;
 
@@ -71,6 +113,29 @@ class AppState extends ChangeNotifier {
   int completedInUnit(Unit unit) =>
       unit.lessons.where((l) => _completedLessons.contains(l.id)).length;
 
+  double unitProgress(Unit unit) {
+    if (unit.lessons.isEmpty) return 0;
+    return completedInUnit(unit) / unit.lessons.length;
+  }
+
+  double get courseProgress {
+    final total = _language.totalLessons;
+    if (total == 0) return 0;
+    var done = 0;
+    for (final u in _language.units) {
+      done += completedInUnit(u);
+    }
+    return (done / total).clamp(0.0, 1.0);
+  }
+
+  int get totalLessonsDone {
+    var done = 0;
+    for (final u in _language.units) {
+      done += completedInUnit(u);
+    }
+    return done;
+  }
+
   Lesson? nextLesson() {
     for (final unit in _language.units) {
       for (final lesson in unit.lessons) {
@@ -87,7 +152,6 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  /// Fetch the admin-managed language list for the picker.
   Future<void> loadLanguages() async {
     if (_loadingLanguages) return;
     _loadingLanguages = true;
@@ -106,12 +170,28 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Restore a previously chosen language on cold start (loads full content).
+  /// Pull admin-managed base (instruction) languages for the picker.
+  Future<void> loadBaseLanguages() async {
+    try {
+      final list = await _content.loadBaseLanguages();
+      if (list.isNotEmpty) {
+        _baseLanguages = list;
+        if (!_baseLanguages.any((b) => b.code == _baseLanguage)) {
+          _baseLanguage = _baseLanguages.first.code;
+        }
+        notifyListeners();
+      }
+    } catch (_) {
+      // Keep defaults if API is offline.
+    }
+  }
+
   Future<bool> restoreSavedLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString(_langKey);
     final savedBase = prefs.getString(_baseLangKey);
     if (savedBase != null && savedBase.isNotEmpty) _baseLanguage = savedBase;
+    await _loadLocalProgress();
     if (code == null || code.isEmpty) return false;
 
     try {
@@ -120,19 +200,13 @@ class AppState extends ChangeNotifier {
       _language = full;
       _onboarded = true;
       notifyListeners();
+      await syncProgressFromServer();
       return true;
     } catch (_) {
       return false;
     }
   }
 
-  /// Re-fetch the current language's units/lessons/questions from the backend.
-  ///
-  /// Content is cached in memory after the initial load, so lessons and
-  /// questions published by admins afterwards never appeared until the learner
-  /// re-picked the language or reinstalled. Call this from pull-to-refresh
-  /// (and anywhere freshness matters). Progress is untouched — completed
-  /// lesson ids live separately.
   Future<bool> refreshLanguage() async {
     final code = _language.id;
     if (code.isEmpty || _loadingContent) return false;
@@ -142,7 +216,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       final fresh = await _content.loadLanguageContent(code);
-      if (!mounted) return false; // guard below via hasListeners pattern
+      if (!mounted) return false;
       if (fresh != null && fresh.id == code) {
         _language = fresh;
         notifyListeners();
@@ -168,7 +242,6 @@ class AppState extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Pick a language, then pull its full admin-managed course content.
   Future<void> chooseLanguage(Language lang) async {
     _language = lang;
     _onboarded = true;
@@ -182,6 +255,7 @@ class AppState extends ChangeNotifier {
       if (full != null) _language = full;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_langKey, lang.id);
+      await syncProgressFromServer();
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -190,7 +264,6 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Set the base language used for prompts, hints, and meanings.
   Future<void> chooseBaseLanguage(String code) async {
     _baseLanguage = code;
     notifyListeners();
@@ -200,30 +273,138 @@ class AppState extends ChangeNotifier {
 
   void loseHeart() {
     if (_hearts > 0) _hearts--;
+    _persistLocalProgress();
     notifyListeners();
   }
 
   void refillHearts() {
     _hearts = 5;
+    _persistLocalProgress();
     notifyListeners();
   }
 
-  void completeLesson(Lesson lesson, {required int mistakes}) {
+  int lessonReward({required int mistakes, int? xpReward}) {
+    final base = xpReward ?? 10;
+    return mistakes == 0 ? base + 5 : base;
+  }
+
+  Future<void> completeLesson(
+    Lesson lesson, {
+    required int mistakes,
+  }) async {
+    final already = _completedLessons.contains(lesson.id);
+    final earned = lessonReward(mistakes: mistakes, xpReward: lesson.xpReward);
     _completedLessons.add(lesson.id);
-    final bonus = mistakes == 0 ? 5 : 0;
-    final earned = 10 + bonus;
-    _xp += earned;
-    _xpToday += earned;
+    if (!already) {
+      _xp += earned;
+      _xpToday += earned;
+    }
+    if (_streak == 0) _streak = 1;
     notifyListeners();
+    await _persistLocalProgress();
+    await _syncLessonToServer(lesson, mistakes: mistakes, earned: earned);
   }
 
-  int lessonReward({required int mistakes}) => mistakes == 0 ? 15 : 10;
-
-  void resetProgress() {
+  Future<void> resetProgress() async {
     _completedLessons.clear();
     _xp = 0;
     _xpToday = 0;
     _hearts = 5;
+    _streak = 0;
     notifyListeners();
+    await _persistLocalProgress();
+  }
+
+  /// Pull server truth (xp/streak/hearts/completed) after sign-in.
+  Future<void> syncProgressFromServer() async {
+    if (_auth?.token == null) return;
+    try {
+      final data = await _api.get('/app/progress');
+      if (data is! Map<String, dynamic>) return;
+      _applyServerProgress(data);
+      notifyListeners();
+      await _persistLocalProgress();
+    } catch (_) {
+      // Offline / guest — local cache remains the source of truth.
+    }
+  }
+
+  Future<void> _syncLessonToServer(
+    Lesson lesson, {
+    required int mistakes,
+    required int earned,
+  }) async {
+    if (_auth?.token == null) return;
+    final lid = int.tryParse(lesson.id);
+    if (lid == null) return;
+    try {
+      final data = await _api.post('/app/progress/lesson', body: {
+        'lessonId': lid,
+        'mistakes': mistakes,
+        'xpEarned': earned,
+        'hearts': _hearts,
+      });
+      if (data is Map<String, dynamic>) {
+        _applyServerProgress(data);
+        notifyListeners();
+        await _persistLocalProgress();
+      }
+    } catch (e) {
+      debugPrint('Progress sync failed (kept locally): $e');
+    }
+  }
+
+  void _applyServerProgress(Map<String, dynamic> data) {
+    final serverXp = data['xp'];
+    if (serverXp is num) _xp = serverXp.toInt();
+    final serverHearts = data['hearts'];
+    if (serverHearts is num) {
+      _hearts = serverHearts.toInt().clamp(0, 5);
+    }
+    final serverStreak = data['streak'];
+    if (serverStreak is num) _streak = serverStreak.toInt();
+
+    final ids = data['completedLessonIds'];
+    if (ids is List) {
+      _completedLessons
+        ..clear()
+        ..addAll(ids.map((e) => e.toString()));
+    }
+  }
+
+  Future<void> _loadLocalProgress() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_progressKey);
+      if (raw == null) return;
+      final data = jsonDecode(raw) as Map<String, dynamic>;
+      _xp = (data['xp'] as num?)?.toInt() ?? _xp;
+      _xpToday = (data['xpToday'] as num?)?.toInt() ?? 0;
+      _hearts = (data['hearts'] as num?)?.toInt() ?? _hearts;
+      _streak = (data['streak'] as num?)?.toInt() ?? _streak;
+      final ids = data['completed'];
+      if (ids is List) {
+        _completedLessons
+          ..clear()
+          ..addAll(ids.map((e) => e.toString()));
+      }
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> _persistLocalProgress() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _progressKey,
+        jsonEncode({
+          'xp': _xp,
+          'xpToday': _xpToday,
+          'hearts': _hearts,
+          'streak': _streak,
+          'completed': _completedLessons.toList(),
+        }),
+      );
+    } catch (_) {}
   }
 }

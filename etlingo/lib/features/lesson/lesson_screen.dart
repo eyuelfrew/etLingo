@@ -3,13 +3,16 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/et_strings.dart';
 import '../../core/widgets/et_button.dart';
 import '../../core/widgets/audio_speed_button.dart';
 import '../../data/models.dart';
 import '../../services/audio_service.dart';
 import '../../state/app_state.dart';
 import 'lesson_result_screen.dart';
-import 'question_views.dart';enum _Feedback { none, correct, wrong }
+import 'question_views.dart';
+
+enum _Feedback { none, correct, wrong }
 
 class LessonScreen extends StatefulWidget {
   final AppState state;
@@ -71,6 +74,7 @@ class _LessonScreenState extends State<LessonScreen> {
   Widget build(BuildContext context) {
     if (_questions.isEmpty) {
       return Scaffold(
+        backgroundColor: EtColors.paper,
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -78,25 +82,35 @@ class _LessonScreenState extends State<LessonScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.construction_rounded,
-                      size: 58, color: EtColors.locked),
-                  const SizedBox(height: 16),
-                  const Text('No questions yet',
-                      style: TextStyle(
-                          fontSize: 19, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 6),
+                  Container(
+                    width: 78,
+                    height: 78,
+                    decoration: BoxDecoration(
+                      color: EtColors.green.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.construction_rounded,
+                        size: 40, color: EtColors.green),
+                  ),
+                  const SizedBox(height: 18),
                   Text(
-                    '“${widget.lesson.title}” is still being built.\nCheck back soon!',
+                    EtStrings.noQuestions,
+                    style: const TextStyle(
+                        fontSize: 19, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '“${widget.lesson.title}”\n${EtStrings.noContentYet}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: EtColors.muted,
-                        height: 1.4),
+                        height: 1.45),
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 24),
                   EtButton(
-                    'Back to path',
+                    EtStrings.keepGoing,
                     icon: Icons.arrow_back_rounded,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -110,13 +124,14 @@ class _LessonScreenState extends State<LessonScreen> {
     return PopScope(
       canPop: false,
       child: Scaffold(
+        backgroundColor: EtColors.paper,
         body: SafeArea(
           child: Column(
             children: [
               _buildTopBar(),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
                   child: _buildQuestion(),
                 ),
               ),
@@ -129,9 +144,9 @@ class _LessonScreenState extends State<LessonScreen> {
   }
 
   Widget _buildTopBar() {
-    final total = widget.lesson.questions.length;
+    final total = _questions.length;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
           IconButton(
@@ -140,10 +155,10 @@ class _LessonScreenState extends State<LessonScreen> {
           ),
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               child: Stack(
                 children: [
-                  Container(height: 14, color: EtColors.line),
+                  Container(height: 12, color: EtColors.line),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: AnimatedFractionallySizedBox(
@@ -151,11 +166,11 @@ class _LessonScreenState extends State<LessonScreen> {
                       curve: Curves.easeOutCubic,
                       widthFactor: (_index + (_revealed ? 1 : 0)) / total,
                       child: Container(
-                        height: 14,
+                        height: 12,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                               colors: [widget.unit.color, widget.unit.dark]),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
@@ -164,24 +179,39 @@ class _LessonScreenState extends State<LessonScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           if (_question.audioUrl.isNotEmpty) ...[
             IconButton(
               onPressed: _playPrompt,
-              tooltip: 'Play audio',
+              tooltip: EtStrings.listen,
               icon: const Icon(Icons.volume_up_rounded, color: EtColors.green),
             ),
             const AudioSpeedButton(),
-            const SizedBox(width: 4),
           ],
-          Icon(Icons.favorite_rounded,
-              size: 20,
-              color: widget.state.hearts > 0
-                  ? EtColors.red
-                  : EtColors.locked),
-          const SizedBox(width: 4),
-          Text('${widget.state.hearts}',
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          const SizedBox(width: 2),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: EtColors.red.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.favorite_rounded,
+                    size: 16,
+                    color: widget.state.hearts > 0
+                        ? EtColors.red
+                        : EtColors.locked),
+                const SizedBox(width: 3),
+                Text(
+                  '${widget.state.hearts}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -228,9 +258,7 @@ class _LessonScreenState extends State<LessonScreen> {
           },
           onWrongPair: () {
             if (!mounted || _revealed) return;
-            setState(() {
-              _mistakes++;
-            });
+            setState(() => _mistakes++);
             widget.state.loseHeart();
             _checkHearts();
           },
@@ -248,16 +276,12 @@ class _LessonScreenState extends State<LessonScreen> {
               child: Text(
                 _question.promptFor(baseLang),
                 style: TextStyle(
-                  fontSize: 16.5,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
                   height: 1.3,
                   color: _question.audioUrl.isEmpty
                       ? EtColors.ink
                       : EtColors.greenDark,
-                  decoration: _question.audioUrl.isEmpty
-                      ? TextDecoration.none
-                      : TextDecoration.underline,
-                  decorationColor: EtColors.green.withValues(alpha: 0.4),
                 ),
               ),
             ),
@@ -289,11 +313,10 @@ class _LessonScreenState extends State<LessonScreen> {
         top: 6,
       ),
       child: EtButton(
-        'Check',
+        EtStrings.check,
         icon: Icons.check_circle_outline_rounded,
         style: EtStyle.primary,
-        onPressed:
-            canCheck ? () { _evaluate(); } : null,
+        onPressed: canCheck ? _evaluate : null,
       ),
     );
   }
@@ -327,21 +350,25 @@ class _LessonScreenState extends State<LessonScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Text('Out of hearts!',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        backgroundColor: EtColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          EtStrings.outOfHearts,
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         content: const Text(
-            'You ran out of hearts. In this demo you get a free refill — keep learning!'),
+          'ልቦችዎ ተጠፍተዋል። ነጻ ማሞላት ይችላሉ — መማር ይቀጥሉ!',
+        ),
         actions: [
           TextButton(
             onPressed: () {
               widget.state.refillHearts();
               Navigator.pop(ctx);
             },
-            child: const Text('Refill ♥',
-                style: TextStyle(
-                    color: EtColors.red, fontWeight: FontWeight.w800)),
+            child: Text(
+              EtStrings.refillHearts,
+              style: TextStyle(color: EtColors.red, fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
@@ -374,21 +401,28 @@ class _LessonScreenState extends State<LessonScreen> {
     final leave = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Text('Leave lesson?',
-            style: TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text('Progress in this lesson will be lost.'),
+        backgroundColor: EtColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          EtStrings.leaveLesson,
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: Text(EtStrings.leaveLessonBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep learning',
-                style: TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(
+              EtStrings.keepLearning,
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Quit',
-                style:
-                    TextStyle(color: EtColors.red, fontWeight: FontWeight.w800)),
+            child: Text(
+              EtStrings.quit,
+              style:
+                  TextStyle(color: EtColors.red, fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
@@ -413,70 +447,63 @@ class _FeedbackBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = correct ? EtColors.green : EtColors.red;
-    return AnimatedSlide(
-      offset: Offset.zero,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOutCubic,
-      child: Container(
-        color: bg,
-        padding: EdgeInsets.fromLTRB(
-            20, 16, 20, MediaQuery.of(context).viewPadding.bottom + 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    correct
-                        ? Icons.emoji_events_rounded
-                        : Icons.close_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+    return Container(
+      color: bg,
+      padding: EdgeInsets.fromLTRB(
+          20, 16, 20, MediaQuery.of(context).viewPadding.bottom + 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                child: Icon(
+                  correct ? Icons.emoji_events_rounded : Icons.close_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      correct ? EtStrings.perfect : EtStrings.notQuite,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800),
+                    ),
+                    if (!correct && correctAnswer.isNotEmpty)
                       Text(
-                        correct ? 'ጎበዝ! Nicely done!' : 'Not quite...',
+                        '${EtStrings.correctAnswer}: $correctAnswer',
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.w800),
+                            color: Color(0xE6FFFFFF),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600),
                       ),
-                      if (!correct && correctAnswer.isNotEmpty)
-                        Text(
-                          'Correct answer: $correctAnswer',
-                          style: const TextStyle(
-                              color: Color(0xE6FFFFFF),
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600),
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            EtButton(
-              'Continue',
-              style: correct ? EtStyle.gold : EtStyle.danger,
-              expanded: false,
-              height: 48,
-              onPressed: onContinue,
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          EtButton(
+            EtStrings.continueLabel,
+            style: correct ? EtStyle.gold : EtStyle.danger,
+            expanded: false,
+            height: 48,
+            onPressed: onContinue,
+          ),
+        ],
       ),
     );
   }

@@ -1,13 +1,14 @@
 import '../data/models.dart';
 import 'api_client.dart';
 
+export 'api_client.dart' show ApiClient, ApiException;
+
 /// Loads admin-managed course content from the backend.
 class ContentService {
   ContentService(this._client);
 
   final ApiClient _client;
 
-  /// Active languages for the picker (metadata only).
   Future<List<Language>> loadLanguages() async {
     final data = await _client.get('/app/languages', auth: false);
     if (data is! List) return const [];
@@ -16,7 +17,18 @@ class ContentService {
         .toList();
   }
 
-  /// Full units/lessons/questions/phrases for one language.
+  /// Instruction languages the learner already speaks (admin-managed).
+  Future<List<BaseLanguageOption>> loadBaseLanguages() async {
+    final data = await _client.get('/app/base-languages', auth: false);
+    if (data is! List) return BaseLanguageOption.defaults;
+    final rows = data
+        .whereType<Map>()
+        .map((j) => BaseLanguageOption.fromJson(Map<String, dynamic>.from(j)))
+        .where((b) => b.code.isNotEmpty)
+        .toList();
+    return rows.isEmpty ? BaseLanguageOption.defaults : rows;
+  }
+
   Future<Language?> loadLanguageContent(String code) async {
     final data = await _client.get('/app/bootstrap/$code', auth: false);
     if (data is! Map<String, dynamic>) return null;
@@ -56,14 +68,12 @@ class AppNotification {
         type: (j['type'] ?? 'general').toString(),
         broadcast: j['broadcast'] == true,
         read: j['read'] == true,
-        createdAt:
-            j['createdAt'] is String ? DateTime.tryParse(j['createdAt'] as String) : null,
+        createdAt: j['createdAt'] is String
+            ? DateTime.tryParse(j['createdAt'] as String)
+            : null,
       );
 }
 
-/// Per-learner notification opt-outs, mirrored from the backend
-/// (`GET/PUT /app/notifications/preferences`). `promotions` defaults to off on
-/// the server; everything else defaults to on.
 class AppNotificationPrefs {
   final bool pushEnabled;
   final bool lessonReminders;

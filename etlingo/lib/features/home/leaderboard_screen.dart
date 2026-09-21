@@ -31,12 +31,12 @@ class LeaderboardScreen extends StatelessWidget {
         builder: (context, _) {
           final sorted = [
             ..._mock.map((e) => (e.$1, e.$2, false)),
-            ('You', state.xp, true),
+            ('እርስዎ · You', state.xp, true),
           ]..sort((a, b) => b.$2.compareTo(a.$2));
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(18),
@@ -46,14 +46,8 @@ class LeaderboardScreen extends StatelessWidget {
                       end: Alignment.bottomRight,
                       colors: [EtColors.yellow, Color(0xFFE8A800)],
                     ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: EtColors.yellowDark.withValues(alpha: 0.4),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: EtShadows.glow(EtColors.yellowDark, blur: 16, y: 6),
                   ),
                   child: Row(
                     children: [
@@ -72,18 +66,18 @@ class LeaderboardScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('ወርቅ · Gold League',
+                            const Text('ወርቅ ሊግ · Gold League',
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800)),
                             const SizedBox(height: 3),
                             Text(
-                              'Top 3 promote · ${state.xpToday}/${AppState.dailyGoal} XP today',
+                              'ሪስ ይቀላቀሉ · ${state.xpToday}/${AppState.dailyGoal} XP ዛሬ',
                               style: TextStyle(
                                 color: EtColors.ink.withValues(alpha: 0.65),
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -95,7 +89,7 @@ class LeaderboardScreen extends StatelessWidget {
               ),
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   itemCount: sorted.length,
                   itemBuilder: (context, i) => _Row(
                     rank: i + 1,

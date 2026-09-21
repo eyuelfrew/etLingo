@@ -2,6 +2,37 @@ import 'package:flutter/material.dart';
 
 enum QuestionKind { mcq, match, fill, listen }
 
+/// Instruction language option (what the learner already speaks).
+class BaseLanguageOption {
+  final String code;
+  final String name;
+  final String nativeName;
+
+  const BaseLanguageOption({
+    required this.code,
+    required this.name,
+    required this.nativeName,
+  });
+
+  factory BaseLanguageOption.fromJson(Map<String, dynamic> j) {
+    final code = (j['id'] ?? j['code'] ?? '').toString();
+    return BaseLanguageOption(
+      code: code,
+      name: (j['name'] ?? code).toString(),
+      nativeName: (j['nativeName'] ?? j['native_name'] ?? j['name'] ?? code)
+          .toString(),
+    );
+  }
+
+  static const List<BaseLanguageOption> defaults = [
+    BaseLanguageOption(code: 'en', name: 'English', nativeName: 'English'),
+    BaseLanguageOption(code: 'am', name: 'Amharic', nativeName: 'አማርኛ'),
+    BaseLanguageOption(code: 'om', name: 'Afaan Oromoo', nativeName: 'Afaan Oromoo'),
+    BaseLanguageOption(code: 'ti', name: 'Tigrinya', nativeName: 'ትግርኛ'),
+    BaseLanguageOption(code: 'so', name: 'Somali', nativeName: 'Soomaali'),
+  ];
+}
+
 /// Maps admin-managed icon names (e.g. 'waving_hand_rounded') to Material icons.
 IconData iconFromName(String? name) {
   const icons = <String, IconData>{
@@ -214,9 +245,17 @@ class Lesson {
   final String id;
   final String title;
   final bool isBoss;
+  final int xpReward;
   final List<Question> questions;
   final List<TeachItem> teachItems;
-  const Lesson(this.id, this.title, {this.isBoss = false, required this.questions, this.teachItems = const []});
+  const Lesson(
+    this.id,
+    this.title, {
+    this.isBoss = false,
+    this.xpReward = 10,
+    required this.questions,
+    this.teachItems = const [],
+  });
 
   factory Lesson.fromJson(Map<String, dynamic> j, {required List<Question> questions}) {
     final rawTeach = j['teachContent'];
@@ -227,6 +266,7 @@ class Lesson {
       (j['id'] ?? '').toString(),
       (j['title'] ?? '').toString(),
       isBoss: j['isBoss'] == true || j['isBoss'] == 1,
+      xpReward: (j['xpReward'] is num) ? (j['xpReward'] as num).toInt() : 10,
       questions: questions,
       teachItems: teachItems,
     );
@@ -240,6 +280,7 @@ class Unit {
   final Color dark;
   final IconData icon;
   final List<Lesson> lessons;
+  final List<TeachItem> teachItems;
   const Unit({
     required this.title,
     required this.subtitle,
@@ -247,9 +288,17 @@ class Unit {
     required this.dark,
     required this.icon,
     required this.lessons,
+    this.teachItems = const [],
   });
 
   factory Unit.fromJson(Map<String, dynamic> j, {required List<Lesson> lessons}) {
+    final rawTeach = j['teachContent'] ?? j['teach_content'];
+    final teachItems = rawTeach is List
+        ? rawTeach
+            .whereType<Map>()
+            .map((e) => TeachItem.fromJson(Map<String, dynamic>.from(e)))
+            .toList()
+        : const <TeachItem>[];
     return Unit(
       title: (j['title'] ?? '').toString(),
       subtitle: (j['subtitle'] ?? '').toString(),
@@ -257,7 +306,21 @@ class Unit {
       dark: colorFromHex(j['darkHex'], fallback: const Color(0xFF056B24)),
       icon: iconFromName(j['icon']?.toString()),
       lessons: lessons,
+      teachItems: teachItems,
     );
+  }
+
+  /// Chapter vocab + any lesson-only extras, de-duplicated by target word.
+  List<TeachItem> teachItemsFor(Lesson lesson) {
+    final seen = <String>{};
+    final out = <TeachItem>[];
+    for (final item in [...teachItems, ...lesson.teachItems]) {
+      final key = item.target.trim();
+      if (key.isEmpty || seen.contains(key)) continue;
+      seen.add(key);
+      out.add(item);
+    }
+    return out;
   }
 }
 

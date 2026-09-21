@@ -19,11 +19,14 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.state.languages.isEmpty) widget.state.loadLanguages();
+      widget.state.loadBaseLanguages();
     });
   }
 
-  void _pick(Language lang) async {
+  Future<void> _pick(Language lang) async {
     await widget.state.chooseLanguage(lang);
+    if (!mounted) return;
+    await widget.state.loadBaseLanguages();
     if (!mounted) return;
     _showBaseLanguagePicker();
   }
@@ -61,15 +64,15 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
                 children: [
                   Text(
                     'እንኳን ደህና መጡ!',
-                    style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Welcome! Which Ethiopian language do you want to learn first?',
+                    'የትኛውን የኢትዮጵያ ቋንቋ መማር ይፈልጋሉ?\nLearn Ethiopian languages using the language you already know.',
                     style: TextStyle(
                       fontSize: 13.5,
                       color: EtColors.muted,
-                      height: 1.4,
+                      height: 1.45,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -114,7 +117,7 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
               TextButton.icon(
                 onPressed: state.loadLanguages,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Retry',
+                label: const Text('እንደገና ሞክር',
                     style: TextStyle(fontWeight: FontWeight.w800)),
               ),
             ],
@@ -123,121 +126,98 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
       );
     }
 
-    return RefreshIndicator(
-      color: EtColors.green,
-      onRefresh: state.loadLanguages,
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-        itemCount: state.languages.length,
-        itemBuilder: (context, i) => _LangCard(
-          lang: state.languages[i],
-          onTap: () => _pick(state.languages[i]),
-        ),
-      ),
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+      itemCount: state.languages.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, i) {
+        final lang = state.languages[i];
+        return _LanguageCard(lang: lang, onTap: () => _pick(lang));
+      },
     );
   }
 }
 
-class _LangCard extends StatefulWidget {
+class _LanguageCard extends StatelessWidget {
   final Language lang;
   final VoidCallback onTap;
-  const _LangCard({required this.lang, required this.onTap});
-
-  @override
-  State<_LangCard> createState() => _LangCardState();
-}
-
-class _LangCardState extends State<_LangCard> {
-  bool _down = false;
+  const _LanguageCard({required this.lang, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final lang = widget.lang;
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _down = true),
-      onTapCancel: () => setState(() => _down = false),
-      onTapUp: (_) => setState(() => _down = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _down ? 0.97 : 1,
-        duration: const Duration(milliseconds: 100),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
         child: Container(
-          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: EtColors.card,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: EtColors.line, width: 1.5),
-            boxShadow: [BoxShadow(color: lang.dark.withValues(alpha: 0.10), blurRadius: 14, offset: const Offset(0, 5))],
+            border: Border.all(color: EtColors.line, width: 1.3),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(21),
-            child: Row(
-              children: [
-                Container(width: 12, color: lang.color),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: [lang.color, lang.dark]),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(lang.icon, color: Colors.white, size: 24),
-                        ),
-                        const SizedBox(width: 13),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                lang.nativeName,
-                                style: TextStyle(
-                                  fontSize: 17.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: EtColors.ink,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${lang.name} · ${lang.speakers} speakers',
-                                style: const TextStyle(
-                                  fontSize: 11.5,
-                                  color: EtColors.muted,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: lang.color.withValues(alpha: 0.10),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  lang.scriptPreview,
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: lang.dark,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.chevron_right_rounded, color: lang.dark, size: 26),
-                      ],
-                    ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [lang.color, lang.dark],
                   ),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ],
-            ),
+                child: Icon(lang.icon, color: Colors.white, size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lang.nativeName,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      lang.name + (lang.speakers.isNotEmpty ? ' · ${lang.speakers}' : ''),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: EtColors.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (lang.helloTarget.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '${lang.helloTarget} · ${lang.helloMeaning}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: lang.dark,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: lang.dark, size: 26),
+            ],
           ),
         ),
       ),
@@ -251,110 +231,109 @@ class _BaseLanguageSheet extends StatelessWidget {
 
   const _BaseLanguageSheet({required this.state, required this.onDone});
 
-  static const _baseLangs = [
-    {'code': 'en', 'name': 'English', 'native': 'English'},
-    {'code': 'am', 'name': 'Amharic', 'native': 'አማርኛ'},
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final baseLangs = state.baseLanguages;
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.55,
+        maxHeight: MediaQuery.of(context).size.height * 0.65,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: EtColors.line,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'How do you speak?',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Choose your native language — lessons will explain words in this language.',
-            style: TextStyle(
-              fontSize: 13,
-              color: EtColors.muted,
-              fontWeight: FontWeight.w500,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 20),
-          ..._baseLangs.map((l) {
-            final isSelected = state.baseLanguage == l['code'];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: GestureDetector(
-                onTap: () async {
-                  await state.chooseBaseLanguage(l['code']!);
-                  onDone();
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? EtColors.green.withValues(alpha: 0.08)
-                        : EtColors.paper,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? EtColors.green : EtColors.line,
-                      width: isSelected ? 2 : 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l['native']!,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: isSelected ? EtColors.greenDark : EtColors.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              l['name']!,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: EtColors.muted,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (isSelected)
-                        const Icon(Icons.check_circle_rounded, color: EtColors.green, size: 22),
-                    ],
-                  ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: EtColors.line,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            );
-          }),
-          const SizedBox(height: 8),
-        ],
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'ምን ቋንቋ ተናግራሉ?',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'የሚያውቁትን ቋንቋ ይምረጡ — ትርጉሞች በዚህ ቋንቋ ይታያሉ።\nChoose the language you already speak for prompts and meanings.',
+              style: TextStyle(
+                fontSize: 13,
+                color: EtColors.muted,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ...baseLangs.map((l) {
+              final isSelected = state.baseLanguage == l.code;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GestureDetector(
+                  onTap: () async {
+                    await state.chooseBaseLanguage(l.code);
+                    onDone();
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? EtColors.green.withValues(alpha: 0.08)
+                          : EtColors.paper,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? EtColors.green : EtColors.line,
+                        width: isSelected ? 2 : 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.nativeName,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: isSelected ? EtColors.greenDark : EtColors.ink,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                l.name,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: EtColors.muted,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(Icons.check_circle_rounded,
+                              color: EtColors.green, size: 22),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

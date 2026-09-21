@@ -47,11 +47,11 @@ class _PhrasebookScreenState extends State<PhrasebookScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Phrasebook',
+                const Text('የቃላት መጠቈለያ',
                     style:
                         TextStyle(fontSize: 23, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text('Every word in your pocket · ${lang.nativeName}',
+                Text('ቃላት በኪስዎ ውስጥ · ${lang.nativeName}',
                     style: const TextStyle(
                         color: EtColors.muted,
                         fontWeight: FontWeight.w600,
@@ -60,7 +60,7 @@ class _PhrasebookScreenState extends State<PhrasebookScreen> {
                 Row(
                   children: [
                     const Expanded(
-                      child: Text('Practice out loud · tap 🎙 to repeat after the teacher',
+                      child: Text('ከመምህሩ ጋር በድጋሚ ይናገሩ · 🎙',
                           style: TextStyle(
                               color: EtColors.muted,
                               fontWeight: FontWeight.w600,
@@ -73,7 +73,7 @@ class _PhrasebookScreenState extends State<PhrasebookScreen> {
                 TextField(
                   onChanged: (v) => setState(() => _query = v.toLowerCase()),
                   decoration: InputDecoration(
-                    hintText: 'Search words...',
+                    hintText: 'ቃላት ፈልግ…',
                     prefixIcon:
                         const Icon(Icons.search_rounded, color: EtColors.muted),
                     filled: true,

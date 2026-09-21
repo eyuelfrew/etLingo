@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/et_button.dart';
+import '../../core/ui/et_strings.dart';
+import '../../core/widgets/et_icons.dart';
 import '../../core/widgets/tibeb_band.dart';
 import '../../services/auth_service.dart';
 import '../../state/app_state.dart';
@@ -22,6 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthService>().refreshProfile();
+      widget.state.loadBaseLanguages();
     });
   }
 
@@ -99,14 +101,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Sign out?',
             style: TextStyle(fontWeight: FontWeight.w800)),
         content: const Text(
-            'Your progress is saved on the server and will be here when you return.'),
+            'እድገትዎ በሰርቨሩ ላይ ይቀመጣል — በተመለሱ ጊዜ እዚሁ ይገኛል።'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Stay')),
+              child: const Text('ቀይር')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sign out',
+            child: const Text('ውጣ',
                 style: TextStyle(
                     color: EtColors.red, fontWeight: FontWeight.w800)),
           ),
@@ -122,17 +124,121 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showBaseLanguagePicker(BuildContext context, AppState state) {
-    const baseLangs = [
-      {'code': 'en', 'name': 'English', 'native': 'English'},
-      {'code': 'am', 'name': 'Amharic', 'native': 'አማርኛ'},
-    ];
+    final baseLangs = state.baseLanguages;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.45,
+          maxHeight: MediaQuery.of(context).size.height * 0.55,
         ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                    color: EtColors.line,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(EtStrings.baseLanguage,
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              Text(
+                EtStrings.baseLanguage == 'Base language'
+                    ? 'Prompts and meanings appear in this language'
+                    : 'ትርጉሞች በዚህ ቋንቋ ይታያሉ',
+                style: const TextStyle(
+                    fontSize: 13, color: EtColors.muted, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 20),
+              ...baseLangs.map((l) {
+                final isSelected = state.baseLanguage == l.code;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: GestureDetector(
+                    onTap: () {
+                      state.chooseBaseLanguage(l.code);
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                '${EtStrings.baseSetTo} ${l.name}')),
+                      );
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? EtColors.green.withValues(alpha: 0.08)
+                            : EtColors.paper,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? EtColors.green : EtColors.line,
+                          width: isSelected ? 2 : 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(l.nativeName,
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: isSelected
+                                            ? EtColors.greenDark
+                                            : EtColors.ink)),
+                                const SizedBox(height: 2),
+                                Text(l.name,
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: EtColors.muted,
+                                        fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(Icons.check_circle_rounded,
+                                color: EtColors.green, size: 22),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAppLanguagePicker(BuildContext context, AppState state) {
+    const options = [
+      {'code': 'en', 'label': 'English', 'native': 'English'},
+      {'code': 'am', 'label': 'Amharic', 'native': 'አማርኛ'},
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -144,7 +250,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Center(
               child: Container(
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 decoration: BoxDecoration(
                   color: EtColors.line,
                   borderRadius: BorderRadius.circular(2),
@@ -152,37 +259,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Base language',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            Text(EtStrings.appLanguage,
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
-            const Text(
-              'Choose the language used for prompts and hints.',
-              style: TextStyle(
+            Text(
+              EtStrings.appLanguageHint,
+              style: const TextStyle(
                   fontSize: 13, color: EtColors.muted, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 20),
-            ...baseLangs.map((l) {
-              final isSelected = state.baseLanguage == l['code'];
+            ...options.map((l) {
+              final isSelected = state.appLanguage == l['code'];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: GestureDetector(
-                  onTap: () {
-                    state.chooseBaseLanguage(l['code']!);
-                    Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Base language set to ${l['name']}')),
-                    );
+                  onTap: () async {
+                    await state.chooseAppLanguage(l['code']!);
+                    if (context.mounted) {
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                '${EtStrings.appLangSetTo} ${l['native']}')),
+                      );
+                    }
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? EtColors.green.withValues(alpha: 0.08)
+                          ? EtColors.blue.withValues(alpha: 0.08)
                           : EtColors.paper,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected ? EtColors.green : EtColors.line,
+                        color: isSelected ? EtColors.blue : EtColors.line,
                         width: isSelected ? 2 : 1.5,
                       ),
                     ),
@@ -197,10 +310,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
                                       color: isSelected
-                                          ? EtColors.greenDark
+                                          ? EtColors.blueDark
                                           : EtColors.ink)),
                               const SizedBox(height: 2),
-                              Text(l['name']!,
+                              Text(l['label']!,
                                   style: const TextStyle(
                                       fontSize: 12,
                                       color: EtColors.muted,
@@ -210,7 +323,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         if (isSelected)
                           const Icon(Icons.check_circle_rounded,
-                              color: EtColors.green, size: 22),
+                              color: EtColors.blue, size: 22),
                       ],
                     ),
                   ),
@@ -230,48 +343,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final lang = state.language;
     final lessonsDone = state.completedLessons.length;
     final totalLessons = lang.totalLessons;
+    final courseColors = lang.id.isEmpty
+        ? const [EtColors.greenMid, EtColors.greenDeep]
+        : [lang.color, lang.dark];
 
     return SafeArea(
       bottom: false,
       child: AnimatedBuilder(
         animation: state,
         builder: (context, _) => ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: EtColors.card,
-                borderRadius: BorderRadius.circular(26),
-                border: Border.all(color: EtColors.line, width: 1.4),
-                boxShadow: EtShadows.soft,
-              ),
+            // ── Identity hero ─────────────────────────────────────────────
+            EtHeroCard(
+              colors: courseColors,
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
               child: Column(
                 children: [
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
                       Container(
-                        width: 72,
-                        height: 72,
+                        width: 84,
+                        height: 84,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const LinearGradient(
-                              colors: [EtColors.green, EtColors.yellow, EtColors.red]),
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [EtColors.green, EtColors.yellow, EtColors.red],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.25),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        padding: const EdgeInsets.all(3),
+                        padding: const EdgeInsets.all(3.5),
                         child: Container(
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            color: EtColors.paper,
+                            color: Colors.white,
                           ),
                           alignment: Alignment.center,
                           child: Text(
                             _initial(auth),
                             style: TextStyle(
-                                fontSize: 27,
-                                fontWeight: FontWeight.w800,
-                                color: lang.dark),
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                              color: courseColors.last,
+                            ),
                           ),
                         ),
                       ),
@@ -281,114 +404,242 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: GestureDetector(
                           onTap: auth.isSignedIn ? () => _editName(auth) : null,
                           child: Container(
-                            width: 30,
-                            height: 30,
+                            width: 32,
+                            height: 32,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: EtColors.blue,
-                              border:
-                                  Border.all(color: Colors.white, width: 3),
+                              color: Colors.white,
+                              border: Border.all(color: EtColors.yellow, width: 2),
                             ),
                             child: const Icon(Icons.edit_rounded,
-                                size: 14, color: Colors.white),
+                                size: 15, color: EtColors.ink),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: auth.isSignedIn ? () => _editName(auth) : null,
-                    child: Text(
-                      auth.isSignedIn
-                          ? (auth.displayName ?? 'Learner')
-                          : 'Guest Learner',
-                      style: const TextStyle(
-                          fontSize: 17.5, fontWeight: FontWeight.w800),
-                    ),
-                  ),
+                  const SizedBox(height: 14),
                   Text(
                     auth.isSignedIn
-                        ? (auth.email ?? 'Google account')
-                        : 'Sign in to save your progress',
+                        ? (auth.displayName ?? EtStrings.guestLearner)
+                        : EtStrings.guestLearner,
                     style: const TextStyle(
-                        color: EtColors.muted,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13),
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    auth.isSignedIn
+                        ? (auth.email ?? 'Google')
+                        : EtStrings.signInToSave,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  // Course chip
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(lang.icon, size: 16, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          lang.id.isEmpty
+                              ? EtStrings.brand
+                              : '${lang.nativeName} · ${lang.name}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            _GoalRing(progress: state.goalProgress, xpToday: state.xpToday),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
+            // ── Goal ring + colored stats ────────────────────────────────
+            _GoalRing(
+              progress: state.goalProgress,
+              xpToday: state.xpToday,
+              accent: lang.id.isEmpty ? EtColors.green : lang.color,
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: _StatCard(
                     icon: Icons.local_fire_department_rounded,
-                    label: 'Day streak',
+                    label: EtStrings.dayStreak,
                     value: '${state.streak}',
-                    color: const Color(0xFFFF9800),
+                    color: EtIcons.streak,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _StatCard(
                     icon: Icons.bolt_rounded,
-                    label: 'Total XP',
+                    label: EtStrings.xp,
                     value: '${state.xp}',
-                    color: EtColors.yellowDark,
+                    color: EtIcons.xp,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
                   child: _StatCard(
-                    icon: Icons.school_rounded,
-                    label: 'Lessons',
-                    value: '$lessonsDone/$totalLessons',
-                    color: EtColors.green,
+                    icon: Icons.favorite_rounded,
+                    label: EtStrings.hearts,
+                    value: '${state.hearts}',
+                    color: EtIcons.hearts,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _StatCard(
-                    icon: Icons.emoji_events_rounded,
-                    label: 'League',
-                    value: 'Gold',
-                    color: EtColors.blue,
+                    icon: Icons.school_rounded,
+                    label: EtStrings.lessonsDone,
+                    value: '$lessonsDone/$totalLessons',
+                    color: EtIcons.lessons,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
-            ClipRRect(borderRadius: BorderRadius.circular(6), child: const TibebBand(height: 14)),
             const SizedBox(height: 8),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('Achievements',
-                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+            _StatCard(
+              icon: Icons.emoji_events_rounded,
+              label: '${EtStrings.tabRank} · ${EtStrings.goldLeague}',
+              value: 'Gold',
+              color: EtIcons.league,
+            ),
+
+            const SizedBox(height: 18),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 8),
+              child: Text(
+                EtStrings.settingsTitle,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: EtColors.muted,
+                  letterSpacing: 0.4,
+                ),
               ),
             ),
+
+            // ── Settings rows (colorful, not flat buttons) ───────────────
+            EtSettingsRow(
+              icon: Icons.language_rounded,
+              color: EtIcons.appLang,
+              title: EtStrings.appLanguage,
+              subtitle: state.appLanguage == 'am' ? 'አማርኛ' : 'English',
+              onTap: () => _showAppLanguagePicker(context, state),
+            ),
+            const SizedBox(height: 8),
+            EtSettingsRow(
+              icon: Icons.translate_rounded,
+              color: EtIcons.baseLang,
+              title: EtStrings.baseLanguage,
+              subtitle: state.baseLanguages
+                      .where((b) => b.code == state.baseLanguage)
+                      .map((b) => b.nativeName)
+                      .followedBy([state.baseLanguage]).first,
+              onTap: () => _showBaseLanguagePicker(context, state),
+            ),
+            const SizedBox(height: 8),
+            EtSettingsRow(
+              icon: Icons.auto_stories_rounded,
+              color: EtColors.green,
+              title: EtStrings.switchCourse,
+              subtitle: lang.id.isEmpty ? '—' : lang.nativeName,
+              onTap: () =>
+                  Navigator.of(context).pushReplacementNamed('/pick'),
+            ),
+            const SizedBox(height: 8),
+            EtSettingsRow(
+              icon: Icons.notifications_active_rounded,
+              color: EtIcons.notify,
+              title: EtStrings.notifications,
+              subtitle: EtStrings.profile,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                    builder: (_) => const NotificationsScreen()),
+              ),
+            ),
+            const SizedBox(height: 8),
+            EtSettingsRow(
+              icon: Icons.tune_rounded,
+              color: EtIcons.notifySettings,
+              title: EtStrings.notificationSettings,
+              subtitle: EtStrings.appLanguageHint,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                    builder: (_) => const NotificationSettingsScreen()),
+              ),
+            ),
+            const SizedBox(height: 8),
+            EtSettingsRow(
+              icon: auth.isSignedIn
+                  ? Icons.logout_rounded
+                  : Icons.login_rounded,
+              color: EtIcons.signOut,
+              title: auth.isSignedIn ? EtStrings.signOut : EtStrings.signInGoogle,
+              onTap: auth.isSignedIn
+                  ? () => _confirmSignOut(auth)
+                  : () => Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/signin', (_) => false),
+            ),
+
+            const SizedBox(height: 22),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: const TibebBand(height: 16, opacity: 0.85),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Achievements ─────────────────────────────────────────────
+            Text(
+              EtStrings.achievements,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 10),
             SizedBox(
-              height: 118,
+              height: 120,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
                   _Badge(
                     icon: Icons.local_fire_department_rounded,
+                    color: EtIcons.streak,
                     title: 'On Fire',
                     desc: '7-day streak',
                     unlocked: state.streak >= 7,
                   ),
                   _Badge(
                     icon: Icons.coffee_rounded,
+                    color: EtColors.yellowDark,
                     title: 'Buna Master',
                     desc: 'Finish Coffee unit',
                     unlocked: lang.units.length > 1 &&
@@ -398,12 +649,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   _Badge(
                     icon: Icons.workspace_premium_rounded,
+                    color: EtColors.gold,
                     title: 'Perfectionist',
                     desc: 'Lesson with 0 mistakes',
                     unlocked: state.xp >= 15 && lessonsDone > 0,
                   ),
                   _Badge(
                     icon: Icons.public_rounded,
+                    color: EtIcons.you,
                     title: 'Polyglot',
                     desc: 'Learn 2+ languages',
                     unlocked: false,
@@ -411,94 +664,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            EtButton(
-              'Notifications',
-              icon: Icons.notifications_rounded,
-              style: EtStyle.gold,
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                    builder: (_) => const NotificationsScreen()),
-              ),
-            ),
-            const SizedBox(height: 10),
-            EtButton(
-              'Notification settings',
-              icon: Icons.tune_rounded,
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                    builder: (_) => const NotificationSettingsScreen()),
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (auth.isSignedIn)
-              EtButton(
-                'Sign out',
-                icon: Icons.logout_rounded,
-                style: EtStyle.danger,
-                onPressed: () => _confirmSignOut(auth),
-              )
-            else
-              EtButton(
-                'Sign in with Google',
-                icon: Icons.login_rounded,
-                onPressed: () =>
-                    Navigator.of(context).pushNamed('/signin'),
-              ),
-            const SizedBox(height: 10),
-            EtButton(
-              'Switch course',
-              icon: Icons.swap_horiz_rounded,
-              style: EtStyle.info,
-              onPressed: () => Navigator.of(context).pushReplacementNamed('/pick'),
-            ),
-            const SizedBox(height: 10),
-            EtButton(
-              'Change base language',
-              icon: Icons.translate_rounded,
-              style: EtStyle.info,
-              onPressed: () => _showBaseLanguagePicker(context, state),
-            ),
-            const SizedBox(height: 10),
-            EtButton(
-              'Reset demo progress',
-              style: EtStyle.neutral,
-              onPressed: () => showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(22)),
-                  title: const Text('Reset everything?',
-                      style: TextStyle(fontWeight: FontWeight.w800)),
-                  content: const Text(
-                      'All XP and completed lessons in this demo will be cleared.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Cancel'),
+            const SizedBox(height: 16),
+            if (state.completedLessons.isNotEmpty || state.xp > 0)
+              EtSettingsRow(
+                icon: Icons.restart_alt_rounded,
+                color: EtColors.muted,
+                title: EtStrings.resetProgress,
+                onTap: () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: EtColors.card,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22)),
+                      title: Text(EtStrings.resetProgress),
+                      content: Text(EtStrings.progressSaved),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text(EtStrings.cancel)),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(EtStrings.resetProgress,
+                              style: const TextStyle(color: EtColors.red)),
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: () {
-                        state.resetProgress();
-                        Navigator.pop(ctx);
-                      },
-                      child: const Text('Reset',
-                          style: TextStyle(
-                              color: EtColors.red,
-                              fontWeight: FontWeight.w800)),
-                    ),
-                  ],
-                ),
+                  );
+                  if (ok == true) await state.resetProgress();
+                },
               ),
-            ),
-            const SizedBox(height: 6),
-            const Center(
-              child: Text(
-                'ኢትLang demo v1.0 — made with ♥ for Ethiopia',
-                style: TextStyle(
-                    fontSize: 11.5, color: EtColors.muted, fontWeight: FontWeight.w600),
-              ),
-            ),
           ],
         ),
       ),
@@ -509,7 +704,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 class _GoalRing extends StatelessWidget {
   final double progress;
   final int xpToday;
-  const _GoalRing({required this.progress, required this.xpToday});
+  final Color accent;
+  const _GoalRing({
+    required this.progress,
+    required this.xpToday,
+    this.accent = EtColors.green,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -524,14 +724,28 @@ class _GoalRing extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 80,
-            height: 80,
+            width: 84,
+            height: 84,
             child: CustomPaint(
-              painter: _RingPainter(progress),
+              painter: _RingPainter(progress, accent: accent),
               child: Center(
-                child: Text('${(progress * 100).round()}%',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w800, fontSize: 15)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('${(progress * 100).round()}%',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            color: accent.computeLuminance() > 0.6
+                                ? EtColors.ink
+                                : accent)),
+                    Text('${xpToday}XP',
+                        style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: EtColors.muted)),
+                  ],
+                ),
               ),
             ),
           ),
@@ -540,20 +754,24 @@ class _GoalRing extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Daily goal',
-                    style:
-                        TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800)),
+                Text(EtStrings.dailyGoal,
+                    style: const TextStyle(
+                        fontSize: 15.5, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text('$xpToday of ${AppState.dailyGoal} XP earned today',
+                Text(
+                    '$xpToday / ${AppState.dailyGoal} XP · ${EtStrings.xpEarned}',
                     style: const TextStyle(
                         color: EtColors.muted,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                         height: 1.35)),
                 const SizedBox(height: 6),
-                Text(progress >= 1 ? 'Goal smashed! ጎበዝ!' : 'Keep going! 💪',
-                    style: const TextStyle(
-                        color: EtColors.green,
+                Text(
+                    progress >= 1
+                        ? '${EtStrings.goalComplete} ጎበዝ!'
+                        : EtStrings.keepGoing,
+                    style: TextStyle(
+                        color: accent,
                         fontWeight: FontWeight.w800,
                         fontSize: 12)),
               ],
@@ -567,20 +785,21 @@ class _GoalRing extends StatelessWidget {
 
 class _RingPainter extends CustomPainter {
   final double progress;
-  _RingPainter(this.progress);
+  final Color accent;
+  _RingPainter(this.progress, {this.accent = EtColors.green});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 7;
+    final radius = size.width / 2 - 8;
 
     canvas.drawCircle(
       center,
       radius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 11
-        ..color = EtColors.line.withValues(alpha: 0.5),
+        ..strokeWidth = 10
+        ..color = EtColors.line.withValues(alpha: 0.45),
     );
 
     final rect = Rect.fromCircle(center: center, radius: radius);
@@ -591,19 +810,20 @@ class _RingPainter extends CustomPainter {
       false,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 11
+        ..strokeWidth = 10
         ..strokeCap = StrokeCap.round
-        ..shader = const SweepGradient(
+        ..shader = SweepGradient(
           startAngle: -3.14159 / 2,
           endAngle: 3.14159 * 1.5,
-          colors: [EtColors.green, EtColors.yellow],
-          transform: GradientRotation(-3.14159 / 2),
+          colors: [accent, EtColors.yellow],
+          transform: const GradientRotation(-3.14159 / 2),
         ).createShader(rect),
     );
   }
 
   @override
-  bool shouldRepaint(covariant _RingPainter old) => old.progress != progress;
+  bool shouldRepaint(covariant _RingPainter old) =>
+      old.progress != progress || old.accent != accent;
 }
 
 class _StatCard extends StatelessWidget {
@@ -624,22 +844,36 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: EtColors.card,
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: EtColors.line, width: 1.3),
+        border: Border.all(color: color.withValues(alpha: 0.22), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 21),
-          const SizedBox(height: 8),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 19),
+          ),
+          const SizedBox(height: 10),
           Text(value,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: color.computeLuminance() > 0.7
+                    ? EtColors.ink
+                    : color,
+              )),
           Text(label,
               style: const TextStyle(
                   fontSize: 11,
                   color: EtColors.muted,
-                  fontWeight: FontWeight.w500)),
+                  fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -648,12 +882,14 @@ class _StatCard extends StatelessWidget {
 
 class _Badge extends StatelessWidget {
   final IconData icon;
+  final Color color;
   final String title;
   final String desc;
   final bool unlocked;
 
   const _Badge({
     required this.icon,
+    required this.color,
     required this.title,
     required this.desc,
     required this.unlocked,
@@ -666,10 +902,12 @@ class _Badge extends StatelessWidget {
       margin: const EdgeInsets.only(right: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: unlocked ? EtColors.yellow.withValues(alpha: 0.15) : EtColors.card,
+        color: unlocked
+            ? color.withValues(alpha: 0.12)
+            : EtColors.card,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: unlocked ? EtColors.yellowDark : EtColors.line,
+          color: unlocked ? color.withValues(alpha: 0.45) : EtColors.line,
           width: 1.4,
         ),
       ),
@@ -677,8 +915,7 @@ class _Badge extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon,
-              size: 30,
-              color: unlocked ? EtColors.yellowDark : EtColors.locked),
+              size: 30, color: unlocked ? color : EtColors.locked),
           const SizedBox(height: 6),
           Text(title,
               textAlign: TextAlign.center,

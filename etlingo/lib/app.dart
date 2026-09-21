@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/ui/et_strings.dart';
 import 'features/auth/google_sign_in_screen.dart';
 import 'features/home/home_shell.dart';
 import 'features/onboarding/language_picker_screen.dart';
@@ -18,10 +19,17 @@ class EtLangApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<AppState?>();
+    final locale = Locale(state?.appLanguage ?? EtStrings.lang);
     return MaterialApp(
       navigatorKey: appNavigatorKey,
       title: 'ኢትLang — Learn Ethiopian Languages',
       debugShowCheckedModeBanner: false,
+      locale: locale,
+      supportedLocales: const [
+        Locale('en'),
+        Locale('am'),
+      ],
       theme: buildEtTheme(),
       initialRoute: '/',
       routes: {

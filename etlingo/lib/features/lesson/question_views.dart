@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/et_strings.dart';
 import '../../data/models.dart';
 import '../../services/audio_service.dart';
 
@@ -49,11 +50,11 @@ class ListenView extends StatelessWidget {
                       const Icon(Icons.volume_up_rounded, size: 40, color: Colors.white),
                 ),
                 const SizedBox(height: 10),
-                Text('Tap to listen',
+                Text(EtStrings.tapToListen,
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
+                        letterSpacing: 0.4,
                         color: EtColors.muted)),
               ],
             ),
@@ -157,27 +158,45 @@ class McqView extends StatelessWidget {
         if (localizedSubPrompt.isNotEmpty) ...[
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 26),
+            padding: const EdgeInsets.symmetric(vertical: 28),
             decoration: BoxDecoration(
-              color: EtColors.card,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: EtColors.line, width: 1.5),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  accent.withValues(alpha: 0.08),
+                  EtColors.card,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: accent.withValues(alpha: 0.2), width: 1.5),
+              boxShadow: EtShadows.soft,
             ),
             child: Column(
               children: [
                 Text(
                   localizedSubPrompt,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                       fontSize: 34, fontWeight: FontWeight.w800, height: 1.15),
                 ),
                 if (localizedHint.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(localizedHint,
-                      style: const TextStyle(
-                          fontSize: 12.5,
-                          color: EtColors.muted,
-                          fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(localizedHint,
+                        style: TextStyle(
+                            fontSize: 12.5,
+                            color: accent.computeLuminance() > 0.6
+                                ? EtColors.greenDark
+                                : accent,
+                            fontWeight: FontWeight.w700)),
+                  ),
                 ],
               ],
             ),
