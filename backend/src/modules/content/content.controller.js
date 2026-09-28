@@ -129,6 +129,7 @@ export const appLanguages = async (req, res) => {
       helloTarget: j.hello_target,
       helloMeaning: j.hello_meaning,
       icon: j.icon,
+      dbId: j.id,
     };
   }));
 };
@@ -170,6 +171,7 @@ export async function bootstrap(req, res) {
     helloMeaning: j.hello_meaning,
     icon: j.icon,
     id: j.code,
+    dbId: j.id,
   };
   delete langOut.color_hex; delete langOut.dark_hex; delete langOut.hello_target; delete langOut.hello_meaning;
   delete langOut.is_active; delete langOut.sort_order; delete langOut.created_at; delete langOut.script_preview; delete langOut.code;

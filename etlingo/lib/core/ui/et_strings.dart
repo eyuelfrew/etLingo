@@ -33,6 +33,30 @@ class EtStrings {
   static String get tabWords => _t('Words', 'ቃላት');
   static String get tabRank => _t('Rank', 'ደረጃ');
   static String get tabYou => _t('You', 'እርስዎ');
+  static String get tabRead => _t('Read', 'ንባብ');
+  static String get cultureTab => _t('Culture', 'ባህል');
+
+  // Reading room
+  static String get readTab => _t('Read', 'ንባብ');
+  static String get readTabSub => _t(
+        'Short passages & materials',
+        'አጭር ጽሑፎችና ቁሳቁሶች',
+      );
+  static String get readHint => _t(
+        'Tap a line to reveal meaning. Use audio when you want to hear it. Lessons still live under Learn.',
+        'ስል ቁልፉን ይንኩ — ትርጉሙ ይታያል። ለማዳመጥ የድምፅ ቁልፉን ይጠቀሙ።',
+      );
+  static String get readPassages => _t('Passages', 'ጽሑፎች');
+  static String get readMaterials => _t('Lesson materials', 'የትምህርት ቁሳቁሶች');
+  static String get readEveryday => _t('Everyday talk', 'የዕለት ተዕለት ንግግር');
+  static String get readRevealAll => _t('Show all', 'ሁሉንም አሳይ');
+  static String get readHide => _t('Hide', 'ደብቅ');
+  static String get readOpenLesson => _t('Open in lesson', 'በትምህርቱ ውስጥ ክፈት');
+  static String get readEmptyTitle => _t('Nothing to read yet', 'ምንም የሚነበብ አልተገኘም');
+  static String get readEmptySub => _t(
+        'Ask your admin to add unit vocabulary, phrases, or lesson files. Then passages appear here automatically.',
+        'አድሚን የክፍል ቃላት ወይም ቁሳቁሶችን ከጨመረ በኋላ እዚህ ይታያሉ።',
+      );
 
   // Learn path
   static String get wordOfDay => _t('Word of the day', 'የቀን ቃል');
@@ -51,6 +75,9 @@ class EtStrings {
         'ይህ ትምህርት እየተዘጋጀ ነው — በቅርቡ ይመጣል!',
       );
   static String get pullToRefresh => _t('Pull to refresh', 'ለማደስ ይጎትቱ');
+  static String get collapseUnit => _t('Collapse chapter', 'ክፍሉን አሳጥጥ');
+  static String get expandUnit => _t('Expand chapter', 'ክፍሉን ክፈት');
+  static String get chapterDone => _t('Chapter complete', 'ክፍሉ ተጠናቋል');
 
   // Lesson / quiz buttons — MUST follow app language
   static String get check => _t('Check', 'አረጋግጥ');
@@ -130,10 +157,10 @@ class EtStrings {
       _t('Notification settings', 'የማሳወቂያ ቅንብሮች');
   static String get switchCourse => _t('Switch course', 'ትምህርት ቀይር');
   static String get baseLanguage => _t('Base language', 'የማስታወሻ ቋንቋ');
-  static String get appLanguage => _t('App language', 'የአፕ ቋንቋ');
+  static String get appLanguage => _t('App language', 'App language · የአፕ ቋንቋ');
   static String get appLanguageHint => _t(
         'Interface language for menus and buttons',
-        'የምናሌና ቁልፎች ቋንቋ',
+        'የምናሌና ቁልፎች ቋንቋ (Interface language)',
       );
   static String get achievements => _t('Achievements', 'ስኬቶች');
   static String get badges => _t('Badges', 'ሜዳልያዎች');
@@ -199,6 +226,62 @@ class EtStrings {
 
   // Misc
   static String get emptyPhrasebook => _t('No phrases yet', 'ቃላት አልተገኙም');
+  static String get like => _t('Like', 'ወደድኩ');
+  static String get comments => _t('Comments', 'አስተያየቶች');
+  static String get alreadyLiked =>
+      _t('You already liked this', 'ቀድመው ወደድዋል');
+  static String get signInToEngage => _t(
+        'Sign in to like or comment',
+        'ለመውደድ ወይም ለአስተያየት ይግቡ',
+      );
+  static String get proverbOfDay =>
+      _t('Proverb of the day', 'የቀን ምሳሌ');
+  static String get stepsLabel => _t('Steps', 'እርምጃዎች');
+  static String get fidelTrainer => _t('Fidel trainer', 'ፊደል ልምምድ');
+  static String get fidelTrainerSub =>
+      _t('Ge’ez script practice', 'የግዕዝ ፊደል ልምምድ');
+  static String get letterFamily => _t('Letter family', 'የፊደል ቤተሰብ');
+  static String get sevenOrders => _t('7 orders', '7 ቅርጾች');
+  static String get familyMode => _t('Whole family', 'ሙሉ ቤተሰብ');
+  static String get anyLetter => _t('Any letter', 'ማንኛውም ፊደል');
+  static String get topicPacks => _t('Topic packs', 'ርዕስ ጥቅሎች');
+  static String get topicPacksSub => _t(
+        'Learn by theme — animals, food, colors — with audio',
+        'በርዕስ ይማሩ — እንስሳት፣ ምግብ፣ ቀለማት — ከድምፅ ጋር',
+      );
+  static String get quizMe => _t('Quiz', 'ፈተና');
+  static String get ethiopianCalendar =>
+      _t('Ethiopian calendar', 'የኢትዮጵያ ቀን አቆጣጠር');
+  static String get today => _t('Today', 'ዛሬ');
+  static String get upcomingHolidays =>
+      _t('Upcoming holidays', 'የሚመጡ በዓላት');
+  static String get noHolidayToday =>
+      _t('No holiday on this day', 'በዚህ ቀን በዓል የለም');
+  static String get listenMode => _t('Listen first', 'መጀመሪያ አዳምጥ');
+  static String get seeMode => _t('See & say', 'ተመልከትና ተናገር');
+  static String get playSound => _t('Play sound', 'ድምፅ አጫውት');
+  static String get whichLetterHear =>
+      _t('Which letter do you hear?', 'የተሰማዎት ፊደል የትኛው ነው?');
+  static String get whichSoundSee =>
+      _t('Which sound matches this letter?', 'ይህ ፊደል የትኛውን ድምፅ ይመስላል?');
+  static String get noAudioYet =>
+      _t('No audio for this letter yet', 'ለዚህ ፊደል እስካሁን ድምፅ የለም');
+  static String get languageExchange =>
+      _t('Language exchange', 'የቋንቋ ልውውጥ');
+  static String get languageExchangeSub => _t(
+        'Practice with native speakers',
+        'ከአፍ የቋንቋ ተናጋሪዎች ጋር ይለማመዱ',
+      );
+  static String get offlineReady => _t('Offline ready', 'ከመስመር ውጭ ዝግጁ');
+  static String get downloadOffline =>
+      _t('Download for offline', 'ለከመስመር ውጭ አውርድ');
+  static String get download => _t('Download', 'አውርድ');
+  static String get musicFolk => _t('Folk song', 'የህዝብ ዘፈን');
+  static String get communityStories =>
+      _t('Community stories', 'የማህበረሰብ ታሪኮች');
+  static String get holidayChallenge =>
+      _t('Holiday challenge', 'የበዓል ፈተና');
+  static String get arShare => _t('AR photo', 'AR ፎቶ');
   static String get emptyNotifications =>
       _t('No notifications', 'ማሳወቂያ የለም');
   static String get goalComplete =>

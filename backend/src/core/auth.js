@@ -77,3 +77,21 @@ export const requireAppAuth = asyncHandler(async (req, _res, next) => {
   req.auth = { sub: user.id, role: 'app_user' };
   next();
 });
+
+/** Attach app-user auth when possible; never fail the request (public reads). */
+export const optionalAppAuth = async (req, _res, next) => {
+  try {
+    const header = req.headers.authorization || '';
+    if (!header.startsWith('Bearer ')) return next();
+    const payload = verify(header.slice(7));
+    if (payload.role !== 'app_user') return next();
+    const { AppUser } = await import('../modules/users/users.models.js');
+    const user = await AppUser.findByPk(payload.sub);
+    if (user && user.status !== 'banned') {
+      req.auth = { sub: user.id, role: 'app_user' };
+    }
+  } catch (_) {
+    /* guest */
+  }
+  next();
+};

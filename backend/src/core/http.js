@@ -14,6 +14,10 @@ export const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
 export function errorHandler(err, req, res, _next) {
+  // Body-parser JSON syntax errors → 400, not a mysterious 500.
+  if (err?.type === 'entity.parse.failed' || /JSON/i.test(err?.message || '')) {
+    return res.status(400).json({ error: 'Invalid JSON body' });
+  }
   const status = err.status || 500;
   if (status >= 500) console.error(err);
   res.status(status).json({ error: err.message || 'Internal server error' });

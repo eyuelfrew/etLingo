@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,8 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/ui/et_strings.dart';
 import '../data/models.dart';
+import '../features/culture/culture_screen.dart';
 import '../services/auth_service.dart';
 import '../services/content_service.dart';
+import '../services/engagement_service.dart';
+import '../services/script_service.dart';
+import '../services/topic_service.dart';
+import '../widgets/app_ad_card.dart';
 
 class AppState extends ChangeNotifier {
   AppState([AuthService? auth]) : _auth = auth {
@@ -14,8 +20,11 @@ class AppState extends ChangeNotifier {
     _api = auth != null
         ? ApiClient(tokenProvider: () async => auth.token)
         : ApiClient(tokenProvider: () async => null);
+    _engagement = EngagementService(_api);
     _loadLocalProgress();
     _restoreAppLanguage();
+    _restoreCultureDone();
+    ensureCultureCacheFlags();
   }
 
   Future<void> _restoreAppLanguage() async {
@@ -49,6 +58,10 @@ class AppState extends ChangeNotifier {
   final AuthService? _auth;
   late final ContentService _content;
   late final ApiClient _api;
+  late final EngagementService _engagement;
+
+  EngagementService get engagement => _engagement;
+  bool get canEngage => isSignedIn;
 
   Language _language = _emptyLanguage;
   List<Language> _languages = const [];
@@ -70,6 +83,8 @@ class AppState extends ChangeNotifier {
   static const String _baseLangKey = 'etlingo_base_language';
   static const String _appLangKey = 'etlingo_app_language';
   static const String _progressKey = 'etlingo_local_progress';
+  static const String _cultureCacheKey = 'etlingo_culture_cache';
+  static const String _cultureDoneKey = 'etlingo_culture_done';
 
   Language get language => _language;
   List<Language> get languages => _languages;
@@ -246,6 +261,7 @@ class AppState extends ChangeNotifier {
     _language = lang;
     _onboarded = true;
     notifyListeners();
+    unawaited(loadLanguageScripts(forceRefresh: true));
 
     _loadingContent = true;
     _error = null;
@@ -306,6 +322,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> resetProgress() async {
+    // 1) Clear on-device cache first so UI updates immediately.
     _completedLessons.clear();
     _xp = 0;
     _xpToday = 0;
@@ -313,6 +330,285 @@ class AppState extends ChangeNotifier {
     _streak = 0;
     notifyListeners();
     await _persistLocalProgress();
+
+    // 2) If signed in, also wipe the server — otherwise the next login
+    //    pulls the old XP/lessons back via GET /app/progress.
+    if (_auth?.token != null) {
+      try {
+        final data = await _api.post('/app/progress/reset');
+        if (data is Map<String, dynamic>) {
+          _applyServerProgress(data);
+          notifyListeners();
+          await _persistLocalProgress();
+        }
+      } catch (e) {
+        debugPrint('[progress] server reset failed (local kept cleared): $e');
+      }
+    }
+  }
+
+  /// Fetch Culture Path chapters + cards for the current course language.
+  /// Caches the payload and falls back to it when offline.
+  Future<List<CultureChapter>> loadCulture({bool forceRefresh = false}) async {
+    final code = _language.id;
+    if (code.isEmpty) return const [];
+    final cacheKey = '$_cultureCacheKey:$code';
+    try {
+      final data = await _api.getWithOptionalAuth('/app/culture/$code');
+      if (data is! Map<String, dynamic>) {
+        return loadCultureCached(code);
+      }
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(cacheKey, jsonEncode(data));
+        await prefs.setBool('$_cultureCacheKey:ready:$code', true);
+      } catch (_) {}
+      _cultureCached[code] = true;
+      _cachedCultureKeys.add(code);
+      return _chaptersFromCultureJson(data);
+    } catch (e) {
+      debugPrint('[culture] load failed: $e');
+      return loadCultureCached(code);
+    }
+  }
+
+  final Map<String, bool> _cultureCached = {};
+  final Set<String> _cachedCultureKeys = {};
+
+  bool isCultureCached(String code) =>
+      _cultureCached[code] == true || _cachedCultureKeys.contains(code);
+
+  Future<void> ensureCultureCacheFlags() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final k in prefs.getKeys()) {
+        if (k.startsWith('$_cultureCacheKey:ready:')) {
+          final code = k.split(':').last;
+          if (prefs.getBool(k) == true) {
+            _cachedCultureKeys.add(code);
+            _cultureCached[code] = true;
+          }
+        }
+      }
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<bool> downloadCulturePack(String code) async {
+    final ok = await loadCulture();
+    final cached = ok.isNotEmpty;
+    if (cached) {
+      _cultureCached[code] = true;
+      _cachedCultureKeys.add(code);
+      notifyListeners();
+    }
+    return cached;
+  }
+
+  Future<List<CultureChapter>> loadCultureCached(String code) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('$_cultureCacheKey:$code');
+      if (raw == null) return const [];
+      final data = jsonDecode(raw) as Map<String, dynamic>;
+      _cultureCached[code] = true;
+      _cachedCultureKeys.add(code);
+      return _chaptersFromCultureJson(data);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  List<CultureChapter> _chaptersFromCultureJson(Map<String, dynamic> data) {
+    final done = <String>{};
+    final doneRaw = data['completedCardIds'];
+    if (doneRaw is List) {
+      done.addAll(doneRaw.map((e) => e.toString()));
+    }
+    // Merge locally completed cards (guest / offline).
+    done.addAll(_localCultureDone);
+    final rawCards = (data['cards'] as List?) ?? [];
+    final byUnit = <int, List<CultureCardModel>>{};
+    for (final raw in rawCards) {
+      final m = Map<String, dynamic>.from(raw as Map);
+      final uid = (m['cultureUnitId'] as num?)?.toInt() ?? 0;
+      byUnit.putIfAbsent(uid, () => []).add(CultureCardModel.fromJson(m));
+    }
+    final rawUnits = (data['units'] as List?) ?? [];
+    final out = <CultureChapter>[];
+    for (final u in rawUnits) {
+      final m = Map<String, dynamic>.from(u as Map);
+      final uid = (m['id'] as num?)?.toInt() ?? 0;
+      final unitCards = byUnit[uid] ?? const <CultureCardModel>[];
+      final doneCount = unitCards.where((c) => done.contains(c.id)).length;
+      out.add(CultureChapter(
+        id: uid,
+        title: (m['title'] ?? '').toString(),
+        subtitle: (m['subtitle'] ?? '').toString(),
+        theme: (m['theme'] ?? 'fact').toString(),
+        color: colorFromHex(m['colorHex'], fallback: _language.color),
+        dark: colorFromHex(m['darkHex'], fallback: _language.dark),
+        icon: iconFromName(m['icon']?.toString()),
+        cards: unitCards,
+        doneCount: doneCount,
+      ));
+    }
+    return out;
+  }
+
+  final Set<String> _localCultureDone = {};
+
+  /// Mark a culture card complete and sync XP (sticky, like lesson progress).
+  Future<int> completeCultureCard(CultureCardModel card) async {
+    _localCultureDone.add(card.id);
+    if (_auth?.token == null) {
+      notifyListeners();
+      await _persistCultureDone();
+      return 0;
+    }
+    try {
+      final data = await _api.post('/app/culture/cards/${card.id}/complete');
+      final earned = data is Map ? (data['earned'] as num?)?.toInt() ?? 0 : 0;
+      if (earned > 0) {
+        _xp += earned;
+        _xpToday += earned;
+        notifyListeners();
+        await _persistLocalProgress();
+      }
+      await _persistCultureDone();
+      return earned;
+    } catch (e) {
+      debugPrint('[culture] complete card failed: $e');
+      await _persistCultureDone();
+      return 0;
+    }
+  }
+
+  Future<void> _persistCultureDone() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cultureDoneKey, jsonEncode(_localCultureDone.toList()));
+    } catch (_) {}
+  }
+
+  Future<void> _restoreCultureDone() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cultureDoneKey);
+      if (raw == null) return;
+      final list = jsonDecode(raw);
+      if (list is List) {
+        _localCultureDone
+          ..clear()
+          ..addAll(list.map((e) => e.toString()));
+      }
+    } catch (_) {}
+  }
+
+  CultureCardModel? _proverbOfDay;
+  CultureCardModel? get proverbOfDay => _proverbOfDay;
+
+  Map<String, dynamic>? _cultureCalendar;
+  Map<String, dynamic>? get cultureCalendar => _cultureCalendar;
+
+  /// Today's proverb (rotates server-side by day).
+  Future<CultureCardModel?> loadProverbOfDay() async {
+    final code = _language.id;
+    if (code.isEmpty) return null;
+    try {
+      final data = await _api.getWithOptionalAuth(
+          '/app/culture/proverb/$code?base=$_baseLanguage');
+      if (data is Map<String, dynamic>) {
+        _proverbOfDay = CultureCardModel.fromJson(data);
+      } else {
+        _proverbOfDay = null;
+      }
+      notifyListeners();
+      return _proverbOfDay;
+    } catch (e) {
+      debugPrint('[culture] proverb failed: $e');
+      return _proverbOfDay;
+    }
+  }
+
+  /// Ethiopian calendar + holiday challenge context.
+  Future<Map<String, dynamic>?> loadCultureCalendar() async {
+    try {
+      final data = await _api.getWithOptionalAuth('/app/culture/calendar');
+      if (data is Map<String, dynamic>) {
+        _cultureCalendar = data;
+        notifyListeners();
+      }
+      return _cultureCalendar;
+    } catch (e) {
+      debugPrint('[culture] calendar failed: $e');
+      return _cultureCalendar;
+    }
+  }
+
+  /// Generic API helpers for community / exchange screens.
+  Future<dynamic> apiGet(String path) => _api.getWithOptionalAuth(path);
+  Future<dynamic> apiPost(String path, Map<String, dynamic> body) =>
+      _api.post(path, body: body);
+
+  ScriptService get _scripts => ScriptService(apiGet);
+
+  LanguageScripts? _languageScripts;
+  LanguageScripts? get languageScripts => _languageScripts;
+
+  /// Load writing system + alphabet for the current course language (cached).
+  Future<LanguageScripts?> loadLanguageScripts({bool forceRefresh = false}) async {
+    final code = _language.id;
+    if (code.isEmpty) return _languageScripts;
+    try {
+      _languageScripts =
+          await _scripts.forLanguage(code, forceRefresh: forceRefresh);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[scripts] load failed: $e');
+    }
+    return _languageScripts;
+  }
+
+  ScriptInfo? get primaryScript => _languageScripts?.primary;
+
+  TopicService get _topics => TopicService(apiGet);
+  TopicPack? _topicsPack;
+  TopicPack? get topicsPack => _topicsPack;
+
+  /// Theme packs (Animals, Food…) for the current language (cached offline).
+  Future<TopicPack?> loadTopics({bool forceRefresh = false}) async {
+    final code = _language.id;
+    if (code.isEmpty) return _topicsPack;
+    try {
+      _topicsPack = await _topics.forLanguage(
+        code,
+        base: _baseLanguage,
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[topics] load failed: $e');
+    }
+    return _topicsPack;
+  }
+
+  /// One live ad for a placement (home_top, culture_top…).
+  Future<AdBanner?> loadAd(String position) async {
+    try {
+      final data = await _api.getWithOptionalAuth(
+        '/app/ads/slot?position=$position&lang=${_language.id}',
+      );
+      if (data is Map<String, dynamic>) return AdBanner.fromJson(data);
+    } catch (e) {
+      debugPrint('[ads] load failed: $e');
+    }
+    return null;
+  }
+
+  Future<void> trackAdClick(int adId) async {
+    try {
+      await _api.post('/app/ads/$adId/click');
+    } catch (_) {}
   }
 
   /// Pull server truth (xp/streak/hearts/completed) after sign-in.

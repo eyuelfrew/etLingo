@@ -15,6 +15,16 @@ const NAV_GROUPS = [
         icon: 'M12 3a9 9 0 100 18 9 9 0 000-18zm0 0c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9m0-18c-2.5 2.5-3.5 5.5-3.5 9s1 6.5 3.5 9M3.5 9h17m-17 6h17',
       },
       {
+        to: '/scripts',
+        label: 'Scripts & alphabets',
+        icon: 'M4 6h16M4 12h7M4 18h5M15 18c2-4 4-6 6-6-2 0-4 2-6 6zm0 0V9',
+      },
+      {
+        to: '/topics',
+        label: 'Topic packs',
+        icon: 'M4 6h16v12H4zM8 6v12M4 10h16M4 14h16',
+      },
+      {
         to: '/base-languages',
         label: 'Base languages',
         icon: 'M3 12h4m4 0h10M7 12a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0zM3 7h18M3 17h18',
@@ -28,6 +38,16 @@ const NAV_GROUPS = [
         to: '/lessons',
         label: 'Lessons',
         icon: 'M4 19V6a2 2 0 012-2h9l5 5v10a2 2 0 01-2 2H6a2 2 0 01-2-2z',
+      },
+      {
+        to: '/culture',
+        label: 'Culture Path',
+        icon: 'M12 3c2 3 6 4 6 8a6 6 0 11-12 0c0-4 4-5 6-8z',
+      },
+      {
+        to: '/community',
+        label: 'Community',
+        icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8zm12 14v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
       },
       {
         to: '/phrases',
@@ -54,6 +74,11 @@ const NAV_GROUPS = [
   {
     group: 'Engagement',
     items: [
+      {
+        to: '/ads',
+        label: 'In-app ads',
+        icon: 'M3 11h18v2H3zM7 7h10v2H7zm2 8h6v2H9z',
+      },
       {
         to: '/notifications',
         label: 'Notifications',

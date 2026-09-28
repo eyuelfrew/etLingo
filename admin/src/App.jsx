@@ -10,6 +10,11 @@ import Phrases from './pages/Phrases';
 import Users from './pages/Users';
 import Notifications from './pages/Notifications';
 import Storage from './pages/Storage';
+import Culture from './pages/Culture';
+import Community from './pages/Community';
+import Scripts from './pages/Scripts';
+import Topics from './pages/Topics';
+import Ads from './pages/Ads';
 
 function Protected({ children }) {
   const { admin } = useAuth();
@@ -35,6 +40,11 @@ export default function App() {
             <Route path="languages" element={<Languages />} />
             <Route path="base-languages" element={<BaseLanguages />} />
             <Route path="lessons" element={<Lessons />} />
+            <Route path="culture" element={<Culture />} />
+            <Route path="community" element={<Community />} />
+            <Route path="scripts" element={<Scripts />} />
+            <Route path="topics" element={<Topics />} />
+            <Route path="ads" element={<Ads />} />
             <Route path="phrases" element={<Phrases />} />
             <Route path="users" element={<Users />} />
             <Route path="notifications" element={<Notifications />} />

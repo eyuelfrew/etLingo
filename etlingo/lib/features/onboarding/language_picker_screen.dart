@@ -211,6 +211,20 @@ class _LanguageCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    if (lang.scriptPreview.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        lang.scriptPreview,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: EtColors.muted,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
                     if (lang.helloTarget.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
@@ -270,14 +284,14 @@ class _BaseLanguageSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'ምን ቋንቋ ተናግራሉ?',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            Text(
+              EtStrings.chooseBase,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'የሚያውቁትን ቋንቋ ይምረጡ — ትርጉሞች በዚህ ቋንቋ ይታያሉ።\nChoose the language you already speak for prompts and meanings.',
-              style: TextStyle(
+            Text(
+              EtStrings.chooseBaseSub,
+              style: const TextStyle(
                 fontSize: 13,
                 color: EtColors.muted,
                 fontWeight: FontWeight.w500,

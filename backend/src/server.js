@@ -5,7 +5,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes/index.js';
 import { errorHandler } from './core/http.js';
-import { requestLogger, requestEcho } from './core/logger.js';
+import { requestLogger, requestEcho, logHttpBanner } from './core/logger.js';
 import { globalLimiter } from './middlewares/rateLimiter.js';
 import { checkStatus, logStatus, getMysqlStatus, getRedisStatus } from './core/status.js';
 import { getFirebaseStatus } from './core/firebase.js';
@@ -46,11 +46,10 @@ app.use(cors({
   credentials: true,
 }));
 
-// Body parsing with size limit
-app.use(express.json({ limit: '2mb' }));
+// Body parsing — do not crash on empty/null JSON bodies.
+app.use(express.json({ limit: '2mb', strict: false }));
 
-// Request logging — morgan (dev) + [http] echo like teftef.
-// Must be before routes so every API call is logged.
+// Request logging — morgan + [http] echo (always on; file + console).
 app.use(requestLogger);
 app.use(requestEcho);
 
@@ -85,12 +84,36 @@ app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use(errorHandler);
 
 const PORT = Number(process.env.PORT || 5050);
+
+/**
+ * Windows lets two processes bind the same port, so a second `npm start` /
+ * `npm run dev` stays silent while the first one serves (and logs) all the
+ * traffic. Say so out loud instead of looking like broken logging.
+ */
+async function warnIfPortAlreadyServed() {
+  try {
+    const res = await fetch(`http://127.0.0.1:${PORT}/api/health`, {
+      signal: AbortSignal.timeout(800),
+    });
+    console.warn('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.warn(`  Another backend already answers on :${PORT} (${res.status}).`);
+    console.warn('  Requests go to that process — this terminal will look silent.');
+    console.warn('  Stop every other backend and keep only one running.');
+    console.warn('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+  } catch {
+    // Nothing listening — the normal case when starting fresh.
+  }
+}
+
+await warnIfPortAlreadyServed();
+
 app.listen(PORT, async () => {
   console.log('==========================================');
   console.log(`  EtLingo backend running at :${PORT}`);
   console.log(`  Health   http://localhost:${PORT}/api/health`);
   console.log(`  API v1   http://localhost:${PORT}/api/v1`);
   console.log('==========================================');
+  logHttpBanner();
   await checkStatus();
   logStatus();
   logFcmAvailability();

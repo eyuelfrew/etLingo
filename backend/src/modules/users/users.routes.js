@@ -3,7 +3,7 @@ import { requireAuth, requireAppAuth } from '../../core/auth.js';
 import {
   list, getOne, create, update, resetProgress, remove,
   registerFcmToken, unregisterFcmToken,
-  getMyProgress, completeLesson,
+  getMyProgress, completeLesson, resetMyProgress,
 } from './users.controller.js';
 
 const router = Router();
@@ -24,5 +24,6 @@ router.delete('/app/devices/token', requireAppAuth, unregisterFcmToken);
 // ── Learner progress (XP, streak, hearts, completed lessons) ──────────────────
 router.get('/app/progress', requireAppAuth, getMyProgress);
 router.post('/app/progress/lesson', requireAppAuth, completeLesson);
+router.post('/app/progress/reset', requireAppAuth, resetMyProgress);
 
 export default router;

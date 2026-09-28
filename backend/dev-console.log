@@ -15,89 +15,382 @@
   Health   http://localhost:5050/api/health
   API v1   http://localhost:5050/api/v1
 ==========================================
+------------------------------------------
+  HTTP logging: morgan 'dev' + [http] echo
+  Console : this terminal (npm run dev)
+  File    : D:\etlingo\backend\logs\http-access.log
+------------------------------------------
 [redis] connecting → redis://127.0.0.1:6379
 [redis] ✓ ready (redis://127.0.0.1:6379)
 [db] MySQL UP | Redis UP
-[2026-09-21T09:51:34.383Z] [fcm] Firebase Messaging AVAILABLE (project "etlingo")
+[2026-09-22T11:24:14.988Z] [fcm] Firebase Messaging AVAILABLE (project "etlingo")
   Worker   campaign runner every 15s
-[0mGET /api/v1/health [32m200[0m 3.631 ms - 342[0m
-[http] GET /api/v1/health → 200 (6ms) anon
-[0mGET /api/v1/app/languages [32m200[0m 10.043 ms - 1220[0m
-[http] GET /api/v1/app/languages → 200 (10ms) anon
-[0mGET /api/v1/admin/base-languages [36m304[0m 10.004 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (10ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 5.723 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (6ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 4.736 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (5ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 8.102 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (8ms) admin#1/super
-[0mGET /api/v1/admin/languages [36m304[0m 8.084 ms - -[0m
-[http] GET /api/v1/admin/languages → 304 (9ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 10.513 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (10ms) admin#1/super
-[0mGET /api/v1/admin/languages [36m304[0m 10.008 ms - -[0m
-[http] GET /api/v1/admin/languages → 304 (11ms) admin#1/super
-[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 9.709 ms - -[0m
-[http] GET /api/v1/admin/units?language_id=1 → 304 (10ms) admin#1/super
-[0mGET /api/v1/admin/lessons [36m304[0m 9.876 ms - -[0m
-[http] GET /api/v1/admin/lessons → 304 (10ms) admin#1/super
-[0mGET /api/v1/admin/questions [36m304[0m 9.259 ms - -[0m
-[http] GET /api/v1/admin/questions → 304 (9ms) admin#1/super
-[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 8.057 ms - -[0m
-[http] GET /api/v1/admin/units?language_id=1 → 304 (9ms) admin#1/super
-[0mGET /api/v1/admin/lessons [36m304[0m 13.997 ms - -[0m
-[http] GET /api/v1/admin/lessons → 304 (14ms) admin#1/super
-[0mGET /api/v1/admin/questions [36m304[0m 13.357 ms - -[0m
-[http] GET /api/v1/admin/questions → 304 (14ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 3.227 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (3ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 2.470 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (3ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 3.238 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (4ms) admin#1/super
-[0mGET /api/v1/admin/languages [36m304[0m 6.990 ms - -[0m
-[http] GET /api/v1/admin/languages → 304 (8ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 6.598 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (7ms) admin#1/super
-[0mGET /api/v1/admin/languages [36m304[0m 6.478 ms - -[0m
-[http] GET /api/v1/admin/languages → 304 (7ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 6.236 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (6ms) admin#1/super
-[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 6.466 ms - -[0m
-[http] GET /api/v1/admin/units?language_id=1 → 304 (6ms) admin#1/super
-[0mGET /api/v1/admin/lessons [36m304[0m 6.446 ms - -[0m
-[http] GET /api/v1/admin/lessons → 304 (7ms) admin#1/super
-[0mGET /api/v1/admin/questions [36m304[0m 3.911 ms - -[0m
-[http] GET /api/v1/admin/questions → 304 (4ms) admin#1/super
-[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 6.883 ms - -[0m
-[http] GET /api/v1/admin/units?language_id=1 → 304 (7ms) admin#1/super
-[0mGET /api/v1/admin/lessons [36m304[0m 6.513 ms - -[0m
-[http] GET /api/v1/admin/lessons → 304 (6ms) admin#1/super
-[0mGET /api/v1/admin/questions [36m304[0m 4.602 ms - -[0m
-[http] GET /api/v1/admin/questions → 304 (5ms) admin#1/super
-[0mGET /api/v1/admin/languages [36m304[0m 4.836 ms - -[0m
-[http] GET /api/v1/admin/languages → 304 (5ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 4.022 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (5ms) admin#1/super
-[0mGET /api/v1/admin/languages [36m304[0m 7.062 ms - -[0m
-[http] GET /api/v1/admin/languages → 304 (7ms) admin#1/super
-[0mGET /api/v1/admin/base-languages [36m304[0m 5.941 ms - -[0m
-[http] GET /api/v1/admin/base-languages → 304 (6ms) admin#1/super
-[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 5.053 ms - -[0m
-[http] GET /api/v1/admin/units?language_id=1 → 304 (5ms) admin#1/super
-[0mGET /api/v1/admin/lessons [36m304[0m 4.813 ms - -[0m
-[http] GET /api/v1/admin/lessons → 304 (5ms) admin#1/super
-[0mGET /api/v1/admin/questions [36m304[0m 3.940 ms - -[0m
-[http] GET /api/v1/admin/questions → 304 (5ms) admin#1/super
-[0mGET /api/v1/admin/units?language_id=1 [36m304[0m 4.920 ms - -[0m
-[http] GET /api/v1/admin/units?language_id=1 → 304 (5ms) admin#1/super
-[0mGET /api/v1/admin/lessons [36m304[0m 3.739 ms - -[0m
-[http] GET /api/v1/admin/lessons → 304 (4ms) admin#1/super
-[0mGET /api/v1/admin/questions [36m304[0m 3.077 ms - -[0m
-[http] GET /api/v1/admin/questions → 304 (3ms) admin#1/super
-[0mGET /api/v1/app/bootstrap/am [32m200[0m 6.925 ms - 2207[0m
-[http] GET /api/v1/app/bootstrap/am → 200 (8ms) anon
+[0mGET /api/v1/health [32m200[0m 2.565 ms - 342[0m
+[http] GET /api/v1/health → 200 (4ms) anon
+[0mPOST /api/v1/auth/login [32m200[0m 221.989 ms - 283[0m
+[http] POST /api/v1/auth/login → 200 (222ms) anon
+[0mGET /api/v1/admin/languages [32m200[0m 6.055 ms - 1655[0m
+[http] GET /api/v1/admin/languages → 200 (6ms) admin#1/super
+Error
+    at Query.run (D:\etlingo\backend\node_modules\sequelize\lib\dialects\mysql\query.js:52:25)
+    at D:\etlingo\backend\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MySQLQueryInterface.select (D:\etlingo\backend\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async CultureUnit.findAll (D:\etlingo\backend\node_modules\sequelize\lib\model.js:1140:21)
+    at async file:///D:/etlingo/backend/src/modules/culture/culture.controller.js:75:16 {
+  name: 'SequelizeDatabaseError',
+  parent: Error: Unknown column 'created_at' in 'field list'
+      at Packet.asError (D:\etlingo\backend\node_modules\mysql2\lib\packets\packet.js:833:17)
+      at Query.execute (D:\etlingo\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:555:34)
+      at PacketParser.onPacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:104:12)
+      at PacketParser.executeStart (D:\etlingo\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:112:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'created_at' in 'field list'",
+    sql: 'SELECT `id`, `language_id`, `title`, `subtitle`, `theme`, `color_hex`, `dark_hex`, `icon`, `sort_order`, `is_active`, `created_at` FROM `culture_units` AS `CultureUnit` WHERE `CultureUnit`.`language_id` = 1 ORDER BY `CultureUnit`.`sort_order` ASC, `CultureUnit`.`id` ASC;',
+    parameters: undefined
+  },
+  original: Error: Unknown column 'created_at' in 'field list'
+      at Packet.asError (D:\etlingo\backend\node_modules\mysql2\lib\packets\packet.js:833:17)
+      at Query.execute (D:\etlingo\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:555:34)
+      at PacketParser.onPacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:104:12)
+      at PacketParser.executeStart (D:\etlingo\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:112:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'created_at' in 'field list'",
+    sql: 'SELECT `id`, `language_id`, `title`, `subtitle`, `theme`, `color_hex`, `dark_hex`, `icon`, `sort_order`, `is_active`, `created_at` FROM `culture_units` AS `CultureUnit` WHERE `CultureUnit`.`language_id` = 1 ORDER BY `CultureUnit`.`sort_order` ASC, `CultureUnit`.`id` ASC;',
+    parameters: undefined
+  },
+  sql: 'SELECT `id`, `language_id`, `title`, `subtitle`, `theme`, `color_hex`, `dark_hex`, `icon`, `sort_order`, `is_active`, `created_at` FROM `culture_units` AS `CultureUnit` WHERE `CultureUnit`.`language_id` = 1 ORDER BY `CultureUnit`.`sort_order` ASC, `CultureUnit`.`id` ASC;',
+  parameters: {}
+}
+[0mGET /api/v1/admin/culture-units?language_id=1 [31m500[0m 6.449 ms - 55[0m
+[http] GET /api/v1/admin/culture-units?language_id=1 → 500 (7ms) admin#1/super
+Error
+    at Query.run (D:\etlingo\backend\node_modules\sequelize\lib\dialects\mysql\query.js:52:25)
+    at D:\etlingo\backend\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MySQLQueryInterface.insert (D:\etlingo\backend\node_modules\sequelize\lib\dialects\abstract\query-interface.js:308:21)
+    at async model.save (D:\etlingo\backend\node_modules\sequelize\lib\model.js:2490:35)
+    at async CultureUnit.create (D:\etlingo\backend\node_modules\sequelize\lib\model.js:1362:12)
+    at async file:///D:/etlingo/backend/src/modules/culture/culture.controller.js:86:15 {
+  name: 'SequelizeDatabaseError',
+  parent: Error: Unknown column 'created_at' in 'field list'
+      at Packet.asError (D:\etlingo\backend\node_modules\mysql2\lib\packets\packet.js:833:17)
+      at Prepare.execute (D:\etlingo\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:555:34)
+      at PacketParser.onPacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:104:12)
+      at PacketParser.executeStart (D:\etlingo\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:112:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'created_at' in 'field list'",
+    sql: 'INSERT INTO `culture_units` (`id`,`language_id`,`title`,`subtitle`,`theme`,`color_hex`,`dark_hex`,`icon`,`sort_order`,`is_active`,`created_at`) VALUES (DEFAULT,?,?,?,?,?,?,?,?,?,?);',
+    parameters: [
+      1,
+      'ቡና · Coffee ceremony',
+      'From green bean to three rounds',
+      'coffee',
+      '#6B3F1D',
+      '#3E2512',
+      'coffee_rounded',
+      0,
+      true,
+      '2026-09-22 11:24:20'
+    ]
+  },
+  original: Error: Unknown column 'created_at' in 'field list'
+      at Packet.asError (D:\etlingo\backend\node_modules\mysql2\lib\packets\packet.js:833:17)
+      at Prepare.execute (D:\etlingo\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:555:34)
+      at PacketParser.onPacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:104:12)
+      at PacketParser.executeStart (D:\etlingo\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:112:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'created_at' in 'field list'",
+    sql: 'INSERT INTO `culture_units` (`id`,`language_id`,`title`,`subtitle`,`theme`,`color_hex`,`dark_hex`,`icon`,`sort_order`,`is_active`,`created_at`) VALUES (DEFAULT,?,?,?,?,?,?,?,?,?,?);',
+    parameters: [
+      1,
+      'ቡና · Coffee ceremony',
+      'From green bean to three rounds',
+      'coffee',
+      '#6B3F1D',
+      '#3E2512',
+      'coffee_rounded',
+      0,
+      true,
+      '2026-09-22 11:24:20'
+    ]
+  },
+  sql: 'INSERT INTO `culture_units` (`id`,`language_id`,`title`,`subtitle`,`theme`,`color_hex`,`dark_hex`,`icon`,`sort_order`,`is_active`,`created_at`) VALUES (DEFAULT,?,?,?,?,?,?,?,?,?,?);',
+  parameters: [
+    1,
+    'ቡና · Coffee ceremony',
+    'From green bean to three rounds',
+    'coffee',
+    '#6B3F1D',
+    '#3E2512',
+    'coffee_rounded',
+    0,
+    true,
+    '2026-09-22 11:24:20'
+  ]
+}
+[0mPOST /api/v1/admin/culture-units [31m500[0m 8.867 ms - 55[0m
+[http] POST /api/v1/admin/culture-units → 500 (9ms) admin#1/super
+[0mPOST /api/v1/admin/culture-cards [33m400[0m 1.826 ms - 39[0m
+[http] POST /api/v1/admin/culture-cards → 400 (2ms) admin#1/super
+[0mPOST /api/v1/admin/culture-cards [33m400[0m 1.668 ms - 39[0m
+[http] POST /api/v1/admin/culture-cards → 400 (1ms) admin#1/super
+[0mPOST /api/v1/admin/culture-cards [33m400[0m 1.388 ms - 39[0m
+[http] POST /api/v1/admin/culture-cards → 400 (2ms) admin#1/super
+[0mPOST /api/v1/admin/culture-cards [33m400[0m 1.487 ms - 39[0m
+[http] POST /api/v1/admin/culture-cards → 400 (4ms) admin#1/super
+Error
+    at Query.run (D:\etlingo\backend\node_modules\sequelize\lib\dialects\mysql\query.js:52:25)
+    at D:\etlingo\backend\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MySQLQueryInterface.select (D:\etlingo\backend\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async CultureUnit.findAll (D:\etlingo\backend\node_modules\sequelize\lib\model.js:1140:21)
+    at async file:///D:/etlingo/backend/src/modules/culture/culture.controller.js:146:17 {
+  name: 'SequelizeDatabaseError',
+  parent: Error: Unknown column 'created_at' in 'field list'
+      at Packet.asError (D:\etlingo\backend\node_modules\mysql2\lib\packets\packet.js:833:17)
+      at Query.execute (D:\etlingo\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:555:34)
+      at PacketParser.onPacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:104:12)
+      at PacketParser.executeStart (D:\etlingo\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:112:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'created_at' in 'field list'",
+    sql: 'SELECT `id`, `language_id`, `title`, `subtitle`, `theme`, `color_hex`, `dark_hex`, `icon`, `sort_order`, `is_active`, `created_at` FROM `culture_units` AS `CultureUnit` WHERE `CultureUnit`.`language_id` = 1 AND `CultureUnit`.`is_active` = true ORDER BY `CultureUnit`.`sort_order` ASC, `CultureUnit`.`id` ASC;',
+    parameters: undefined
+  },
+  original: Error: Unknown column 'created_at' in 'field list'
+      at Packet.asError (D:\etlingo\backend\node_modules\mysql2\lib\packets\packet.js:833:17)
+      at Query.execute (D:\etlingo\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:555:34)
+      at PacketParser.onPacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:104:12)
+      at PacketParser.executeStart (D:\etlingo\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:112:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'created_at' in 'field list'",
+    sql: 'SELECT `id`, `language_id`, `title`, `subtitle`, `theme`, `color_hex`, `dark_hex`, `icon`, `sort_order`, `is_active`, `created_at` FROM `culture_units` AS `CultureUnit` WHERE `CultureUnit`.`language_id` = 1 AND `CultureUnit`.`is_active` = true ORDER BY `CultureUnit`.`sort_order` ASC, `CultureUnit`.`id` ASC;',
+    parameters: undefined
+  },
+  sql: 'SELECT `id`, `language_id`, `title`, `subtitle`, `theme`, `color_hex`, `dark_hex`, `icon`, `sort_order`, `is_active`, `created_at` FROM `culture_units` AS `CultureUnit` WHERE `CultureUnit`.`language_id` = 1 AND `CultureUnit`.`is_active` = true ORDER BY `CultureUnit`.`sort_order` ASC, `CultureUnit`.`id` ASC;',
+  parameters: {}
+}
+[0mGET /api/v1/app/culture/am [31m500[0m 3.147 ms - 55[0m
+[http] GET /api/v1/app/culture/am → 500 (3ms) anon
+[0mPOST /api/v1/auth/login [32m200[0m 215.929 ms - 283[0m
+[http] POST /api/v1/auth/login → 200 (217ms) anon
+Error
+    at Query.run (D:\etlingo\backend\node_modules\sequelize\lib\dialects\mysql\query.js:52:25)
+    at D:\etlingo\backend\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MySQLQueryInterface.insert (D:\etlingo\backend\node_modules\sequelize\lib\dialects\abstract\query-interface.js:308:21)
+    at async model.save (D:\etlingo\backend\node_modules\sequelize\lib\model.js:2490:35)
+    at async CultureUnit.create (D:\etlingo\backend\node_modules\sequelize\lib\model.js:1362:12)
+    at async file:///D:/etlingo/backend/src/modules/culture/culture.controller.js:86:15 {
+  name: 'SequelizeDatabaseError',
+  parent: Error: Unknown column 'created_at' in 'field list'
+      at Packet.asError (D:\etlingo\backend\node_modules\mysql2\lib\packets\packet.js:833:17)
+      at Prepare.execute (D:\etlingo\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:555:34)
+      at PacketParser.onPacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:104:12)
+      at PacketParser.executeStart (D:\etlingo\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:112:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'created_at' in 'field list'",
+    sql: 'INSERT INTO `culture_units` (`id`,`language_id`,`title`,`subtitle`,`theme`,`color_hex`,`dark_hex`,`icon`,`sort_order`,`is_active`,`created_at`) VALUES (DEFAULT,?,?,?,?,?,?,?,?,?,?);',
+    parameters: [
+      1,
+      't',
+      '',
+      'coffee',
+      '#078930',
+      '#056B24',
+      'menu_book_rounded',
+      0,
+      true,
+      '2026-09-22 11:24:36'
+    ]
+  },
+  original: Error: Unknown column 'created_at' in 'field list'
+      at Packet.asError (D:\etlingo\backend\node_modules\mysql2\lib\packets\packet.js:833:17)
+      at Prepare.execute (D:\etlingo\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:555:34)
+      at PacketParser.onPacket (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:104:12)
+      at PacketParser.executeStart (D:\etlingo\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (D:\etlingo\backend\node_modules\mysql2\lib\base\connection.js:112:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'created_at' in 'field list'",
+    sql: 'INSERT INTO `culture_units` (`id`,`language_id`,`title`,`subtitle`,`theme`,`color_hex`,`dark_hex`,`icon`,`sort_order`,`is_active`,`created_at`) VALUES (DEFAULT,?,?,?,?,?,?,?,?,?,?);',
+    parameters: [
+      1,
+      't',
+      '',
+      'coffee',
+      '#078930',
+      '#056B24',
+      'menu_book_rounded',
+      0,
+      true,
+      '2026-09-22 11:24:36'
+    ]
+  },
+  sql: 'INSERT INTO `culture_units` (`id`,`language_id`,`title`,`subtitle`,`theme`,`color_hex`,`dark_hex`,`icon`,`sort_order`,`is_active`,`created_at`) VALUES (DEFAULT,?,?,?,?,?,?,?,?,?,?);',
+  parameters: [
+    1,
+    't',
+    '',
+    'coffee',
+    '#078930',
+    '#056B24',
+    'menu_book_rounded',
+    0,
+    true,
+    '2026-09-22 11:24:36'
+  ]
+}
+[0mPOST /api/v1/admin/culture-units [31m500[0m 3.314 ms - 55[0m
+[http] POST /api/v1/admin/culture-units → 500 (3ms) admin#1/super
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[Firebase] ✓ Admin SDK initialized
+[Firebase]   project: etlingo
+[Firebase]   service account: firebase-adminsdk-fbsvc@etlingo.iam.gserviceaccount.com
+==========================================
+  EtLingo backend running at :5050
+  Health   http://localhost:5050/api/health
+  API v1   http://localhost:5050/api/v1
+==========================================
+------------------------------------------
+  HTTP logging: morgan 'dev' + [http] echo
+  Console : this terminal (npm run dev)
+  File    : D:\etlingo\backend\logs\http-access.log
+------------------------------------------
+[redis] connecting → redis://127.0.0.1:6379
+[redis] ✓ ready (redis://127.0.0.1:6379)
+[db] MySQL UP | Redis UP
+[2026-09-22T11:24:55.402Z] [fcm] Firebase Messaging AVAILABLE (project "etlingo")
+  Worker   campaign runner every 15s
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[Firebase] ✓ Admin SDK initialized
+[Firebase]   project: etlingo
+[Firebase]   service account: firebase-adminsdk-fbsvc@etlingo.iam.gserviceaccount.com
+==========================================
+  EtLingo backend running at :5050
+  Health   http://localhost:5050/api/health
+  API v1   http://localhost:5050/api/v1
+==========================================
+------------------------------------------
+  HTTP logging: morgan 'dev' + [http] echo
+  Console : this terminal (npm run dev)
+  File    : D:\etlingo\backend\logs\http-access.log
+------------------------------------------
+[redis] connecting → redis://127.0.0.1:6379
+[redis] ✓ ready (redis://127.0.0.1:6379)
+[db] MySQL UP | Redis UP
+[2026-09-22T11:24:57.168Z] [fcm] Firebase Messaging AVAILABLE (project "etlingo")
+  Worker   campaign runner every 15s
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[Firebase] ✓ Admin SDK initialized
+[Firebase]   project: etlingo
+[Firebase]   service account: firebase-adminsdk-fbsvc@etlingo.iam.gserviceaccount.com
+==========================================
+  EtLingo backend running at :5050
+  Health   http://localhost:5050/api/health
+  API v1   http://localhost:5050/api/v1
+==========================================
+------------------------------------------
+  HTTP logging: morgan 'dev' + [http] echo
+  Console : this terminal (npm run dev)
+  File    : D:\etlingo\backend\logs\http-access.log
+------------------------------------------
+[redis] connecting → redis://127.0.0.1:6379
+[redis] ✓ ready (redis://127.0.0.1:6379)
+[db] MySQL UP | Redis UP
+[2026-09-22T11:24:59.089Z] [fcm] Firebase Messaging AVAILABLE (project "etlingo")
+  Worker   campaign runner every 15s
+[0mGET /api/v1/app/culture/am [32m200[0m 12.146 ms - 163[0m
+[http] GET /api/v1/app/culture/am → 200 (13ms) anon
+[0mGET /api/v1/app/culture/proverb/am?base=en [32m200[0m 3.960 ms - 4[0m
+[http] GET /api/v1/app/culture/proverb/am?base=en → 200 (4ms) anon
+[0mPOST /api/v1/auth/login [32m200[0m 238.105 ms - 283[0m
+[http] POST /api/v1/auth/login → 200 (239ms) anon
+[0mGET /api/v1/admin/languages [32m200[0m 5.710 ms - 1655[0m
+[http] GET /api/v1/admin/languages → 200 (6ms) admin#1/super
+[0mGET /api/v1/admin/culture-units?language_id=1 [32m200[0m 4.428 ms - 2[0m
+[http] GET /api/v1/admin/culture-units?language_id=1 → 200 (5ms) admin#1/super
+[0mPOST /api/v1/admin/culture-units [32m201[0m 12.029 ms - 221[0m
+[http] POST /api/v1/admin/culture-units → 201 (13ms) admin#1/super
+[0mPOST /api/v1/admin/culture-cards [32m201[0m 11.433 ms - 619[0m
+[http] POST /api/v1/admin/culture-cards → 201 (12ms) admin#1/super
+[0mPOST /api/v1/admin/culture-cards [32m201[0m 6.453 ms - 549[0m
+[http] POST /api/v1/admin/culture-cards → 201 (7ms) admin#1/super
+[0mPOST /api/v1/admin/culture-cards [32m201[0m 6.706 ms - 703[0m
+[http] POST /api/v1/admin/culture-cards → 201 (7ms) admin#1/super
+[0mPOST /api/v1/admin/culture-cards [32m201[0m 4.563 ms - 435[0m
+[http] POST /api/v1/admin/culture-cards → 201 (5ms) admin#1/super
+[0mGET /api/v1/app/culture/am [32m200[0m 6.442 ms - 2674[0m
+[http] GET /api/v1/app/culture/am → 200 (6ms) anon
+[0mGET /api/v1/app/culture/am [32m200[0m 6.538 ms - 2674[0m
+[http] GET /api/v1/app/culture/am → 200 (7ms) anon
+[0mGET /api/health [32m200[0m 0.710 ms - 342[0m
+[http] GET /api/health → 200 (1ms) anon
 [31m[nodemon] app crashed - waiting for file changes before starting...[39m
 [32m[nodemon] restarting child process[39m
 [32m[nodemon] starting `node src/server.js`[39m
@@ -109,9 +402,14 @@
   Health   http://localhost:5050/api/health
   API v1   http://localhost:5050/api/v1
 ==========================================
+------------------------------------------
+  HTTP logging: morgan 'dev' + [http] echo
+  Console : this terminal (npm run dev)
+  File    : D:\etlingo\backend\logs\http-access.log
+------------------------------------------
 [redis] connecting → redis://127.0.0.1:6379
 [redis] ✓ ready (redis://127.0.0.1:6379)
 [db] MySQL UP | Redis UP
-[2026-09-21T10:03:29.919Z] [fcm] Firebase Messaging AVAILABLE (project "etlingo")
+[2026-09-22T11:27:42.659Z] [fcm] Firebase Messaging AVAILABLE (project "etlingo")
   Worker   campaign runner every 15s
 ^C^C

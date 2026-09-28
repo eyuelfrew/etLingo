@@ -263,6 +263,21 @@ export const resetProgress = asyncHandler(async (req, res) => {
   res.json(await withStats(user));
 });
 
+/** Learner-initiated reset — wipes server XP/lessons for the signed-in user. */
+export const resetMyProgress = asyncHandler(async (req, res) => {
+  const user = await AppUser.findByPk(req.auth.sub);
+  if (!user) throw unauthorized('User not found');
+
+  const deleted = await LessonProgress.destroy({ where: { app_user_id: user.id } });
+  await user.update({ xp: 0, hearts: 5, streak: 0, last_active_date: null });
+
+  console.log(`[users] learner #${user.id} reset own progress (${deleted} lesson record(s))`);
+  res.json({
+    ...toUser(user),
+    completedLessonIds: [],
+  });
+});
+
 export const remove = asyncHandler(async (req, res) => {
   const user = await AppUser.findByPk(req.params.id);
   if (!user) throw notFound('User not found');

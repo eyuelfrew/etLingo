@@ -8,6 +8,7 @@ import '../../services/auth_service.dart';
 import '../../state/app_state.dart';
 import '../notifications/notifications_screen.dart';
 import '../notifications/notification_settings_screen.dart';
+import '../../widgets/ad_slot.dart';
 
 class ProfileScreen extends StatefulWidget {
   final AppState state;
@@ -23,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthService>().refreshProfile();
-      widget.state.loadBaseLanguages();
     });
   }
 
@@ -123,119 +123,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _showBaseLanguagePicker(BuildContext context, AppState state) {
-    final baseLangs = state.baseLanguages;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.55,
-        ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 36, height: 4,
-                  decoration: BoxDecoration(
-                    color: EtColors.line,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(EtStrings.baseLanguage,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 6),
-              Text(
-                EtStrings.baseLanguage == 'Base language'
-                    ? 'Prompts and meanings appear in this language'
-                    : 'ትርጉሞች በዚህ ቋንቋ ይታያሉ',
-                style: const TextStyle(
-                    fontSize: 13, color: EtColors.muted, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 20),
-              ...baseLangs.map((l) {
-                final isSelected = state.baseLanguage == l.code;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: GestureDetector(
-                    onTap: () {
-                      state.chooseBaseLanguage(l.code);
-                      Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                '${EtStrings.baseSetTo} ${l.name}')),
-                      );
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? EtColors.green.withValues(alpha: 0.08)
-                            : EtColors.paper,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected ? EtColors.green : EtColors.line,
-                          width: isSelected ? 2 : 1.5,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(l.nativeName,
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: isSelected
-                                            ? EtColors.greenDark
-                                            : EtColors.ink)),
-                                const SizedBox(height: 2),
-                                Text(l.name,
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: EtColors.muted,
-                                        fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
-                          if (isSelected)
-                            const Icon(Icons.check_circle_rounded,
-                                color: EtColors.green, size: 22),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showAppLanguagePicker(BuildContext context, AppState state) {
+  Future<void> _showAppLanguagePicker(BuildContext context, AppState state) async {
+    // Always bilingual so the control is findable in either UI language.
     const options = [
       {'code': 'en', 'label': 'English', 'native': 'English'},
       {'code': 'am', 'label': 'Amharic', 'native': 'አማርኛ'},
     ];
-    showModalBottomSheet(
+    final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
@@ -259,13 +153,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Text(EtStrings.appLanguage,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const Text(
+              'App language · የአፕ ቋንቋ',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 6),
-            Text(
-              EtStrings.appLanguageHint,
-              style: const TextStyle(
+            const Text(
+              'Interface / buttons language. Learning content uses base language.',
+              style: TextStyle(
                   fontSize: 13, color: EtColors.muted, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 20),
@@ -273,58 +168,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final isSelected = state.appLanguage == l['code'];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: GestureDetector(
-                  onTap: () async {
-                    await state.chooseAppLanguage(l['code']!);
-                    if (context.mounted) {
-                      Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                '${EtStrings.appLangSetTo} ${l['native']}')),
-                      );
-                    }
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? EtColors.blue.withValues(alpha: 0.08)
-                          : EtColors.paper,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected ? EtColors.blue : EtColors.line,
-                        width: isSelected ? 2 : 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(l['native']!,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: isSelected
-                                          ? EtColors.blueDark
-                                          : EtColors.ink)),
-                              const SizedBox(height: 2),
-                              Text(l['label']!,
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      color: EtColors.muted,
-                                      fontWeight: FontWeight.w500)),
-                            ],
-                          ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => Navigator.of(ctx).pop(l['code']),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? EtColors.blue.withValues(alpha: 0.08)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? EtColors.blue : EtColors.line,
+                          width: isSelected ? 2 : 1.5,
                         ),
-                        if (isSelected)
-                          const Icon(Icons.check_circle_rounded,
-                              color: EtColors.blue, size: 22),
-                      ],
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(l['native']!,
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: isSelected
+                                            ? EtColors.blueDark
+                                            : EtColors.ink)),
+                                const SizedBox(height: 2),
+                                Text(l['label']!,
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: EtColors.muted,
+                                        fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(Icons.check_circle_rounded,
+                                color: EtColors.blue, size: 22),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -332,6 +221,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             }),
           ],
         ),
+      ),
+    );
+    if (selected == null || selected == state.appLanguage) return;
+    await state.chooseAppLanguage(selected);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(selected == 'am'
+            ? 'App language set to አማርኛ'
+            : 'App language set to English'),
       ),
     );
   }
@@ -354,6 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, _) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
+            AdSlot(state: state, position: 'profile', compact: true),
             // ── Identity hero ─────────────────────────────────────────────
             EtHeroCard(
               colors: courseColors,
@@ -526,9 +426,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
             _StatCard(
-              icon: Icons.menu_book_rounded,
-              label: EtStrings.phrasebook,
-              value: '${lang.phrases.length}',
+              icon: Icons.auto_stories_rounded,
+              label: EtStrings.tabRead,
+              value: '${lang.phrases.length + lang.totalLessons}',
               color: EtColors.yellowDark,
             ),
 
@@ -550,27 +450,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             EtSettingsRow(
               icon: Icons.language_rounded,
               color: EtIcons.appLang,
-              title: EtStrings.appLanguage,
-              subtitle: state.appLanguage == 'am' ? 'አማርኛ' : 'English',
+              title: 'App language · የአፕ ቋንቋ',
+              subtitle: state.appLanguage == 'am' ? 'አማርኛ (Amharic)' : 'English',
               onTap: () => _showAppLanguagePicker(context, state),
-            ),
-            const SizedBox(height: 8),
-            EtSettingsRow(
-              icon: Icons.translate_rounded,
-              color: EtIcons.baseLang,
-              title: EtStrings.baseLanguage,
-              subtitle: state.baseLanguages
-                      .where((b) => b.code == state.baseLanguage)
-                      .map((b) => b.nativeName)
-                      .followedBy([state.baseLanguage]).first,
-              onTap: () => _showBaseLanguagePicker(context, state),
             ),
             const SizedBox(height: 8),
             EtSettingsRow(
               icon: Icons.auto_stories_rounded,
               color: EtColors.green,
               title: EtStrings.switchCourse,
-              subtitle: lang.id.isEmpty ? '—' : lang.nativeName,
+              subtitle: lang.id.isEmpty ? '—' : '${lang.nativeName} · ${state.baseLanguage.toUpperCase()}',
               onTap: () =>
                   Navigator.of(context).pushReplacementNamed('/pick'),
             ),
@@ -678,7 +567,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(22)),
                       title: Text(EtStrings.resetProgress),
-                      content: Text(EtStrings.progressSaved),
+                      content: Text(auth.isSignedIn
+                          ? '${EtStrings.progressSaved}\n\nThis clears XP, hearts, streak, and completed lessons on this account.'
+                          : 'Progress on this device will be cleared. Sign in to also clear server progress.'),
                       actions: [
                         TextButton(
                             onPressed: () => Navigator.pop(ctx, false),

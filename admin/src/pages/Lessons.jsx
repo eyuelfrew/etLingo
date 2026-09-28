@@ -486,6 +486,28 @@ export default function Lessons() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-[12px] font-semibold">
                       <button
+                        onClick={async () => {
+                          try {
+                            const { data } = await client.get(
+                              `/admin/engagement/units/${unit.id}`,
+                            );
+                            alert(
+                              `${unit.title}: ${data.likes} likes · ${data.commentCount} comments\n\n` +
+                                (data.comments || [])
+                                  .slice(0, 8)
+                                  .map((c) => `• ${c.author}: ${c.body}`)
+                                  .join('\n'),
+                            );
+                          } catch (e) {
+                            setError(apiError(e, 'Failed to load unit engagement'));
+                          }
+                        }}
+                        className="rounded-lg bg-white/90 px-2.5 py-1.5 text-et-red hover:bg-white"
+                        title="Likes & comments"
+                      >
+                        ♥
+                      </button>
+                      <button
                         onClick={() => setUnitTeachCtx({ unitId: unit.id, unit })}
                         className="rounded-lg bg-white/95 px-3 py-1.5 text-et-green-dark hover:bg-white"
                       >

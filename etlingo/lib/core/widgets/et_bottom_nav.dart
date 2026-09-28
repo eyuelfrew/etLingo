@@ -12,19 +12,16 @@ class EtBottomNav extends StatelessWidget {
 
   static const _icons = [
     Icons.school_rounded,
-    Icons.menu_book_rounded,
     Icons.person_rounded,
   ];
 
   static const _accent = [
     EtColors.green,
-    EtColors.yellowDark,
     EtColors.blue,
   ];
 
   List<String> get _labels => [
         EtStrings.tabLearn,
-        EtStrings.tabWords,
         EtStrings.tabYou,
       ];
 

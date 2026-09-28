@@ -1,6 +1,16 @@
+import fs from 'fs';
+import path from 'path';
 import morgan from 'morgan';
 
-// Fields that must never reach the console.
+/**
+ * Request logging is a development convenience: the access log is useful while
+ * building, but in production it floods the platform log stream (and echoes
+ * request bodies), so it is disabled when NODE_ENV=production.
+ */
+export const nodeEnv = process.env.NODE_ENV || 'development';
+/** Always log HTTP in this project — user expects teftef-style access logs. */
+export const isDev = process.env.DISABLE_HTTP_LOG !== '1';
+
 const REDACTED_KEYS = new Set([
   'password', 'currentpassword', 'newpassword',
   'idtoken', 'token', 'authorization', 'secret', 'accesstoken',
@@ -26,18 +36,45 @@ morgan.token('body', (req) => {
   return ` ${s}`;
 });
 
+/** compact = one etLingo line; any other value is passed through to morgan ('dev', 'combined', …). */
 const COMPACT = ':date[iso] :method :url → :status (:response-time ms) [:who]:body';
+const FORMAT = process.env.MORGAN_FORMAT === 'compact'
+  ? COMPACT
+  : (process.env.MORGAN_FORMAT || 'dev');
 
-// teftef-style colored 'dev' by default; set MORGAN_FORMAT=compact for etLingo format.
-const format = process.env.MORGAN_FORMAT === 'compact' ? COMPACT : 'dev';
+/** Dev-only access log file; nothing is written on disk in production. */
+export const HTTP_LOG_PATH = path.resolve(
+  process.cwd(),
+  process.env.HTTP_LOG_FILE || 'logs/http-access.log',
+);
 
-/** Always log to stdout so the terminal (nodemon) shows every request. */
-export const requestLogger = morgan(format, {
+let fileStream = null;
+try {
+  fs.mkdirSync(path.dirname(HTTP_LOG_PATH), { recursive: true });
+  fileStream = fs.createWriteStream(HTTP_LOG_PATH, { flags: 'a' });
+} catch (e) {
+  console.error(`[logger] cannot open ${HTTP_LOG_PATH}: ${e.message}`);
+}
+
+/** In dev, write every access line to BOTH the console and the log file. */
+const tee = {
+  write(str) {
+    try {
+      process.stdout.write(str);
+    } catch (_) {}
+    try {
+      fileStream?.write(str);
+    } catch (_) {}
+  },
+};
+
+/** morgan — teftef-style 'dev' lines on stdout + file. */
+export const requestLogger = morgan(FORMAT, {
   skip: (req) => req.method === 'OPTIONS',
-  stream: process.stdout,
+  stream: tee,
 });
 
-/** Extra [http] line — easy to spot in a busy nodemon window. */
+/** Extra [http] line — obvious even if colors are stripped. */
 export function requestEcho(req, res, next) {
   const start = Date.now();
   res.on('finish', () => {
@@ -47,11 +84,18 @@ export function requestEcho(req, res, next) {
           ? `user#${req.auth.sub}`
           : `admin#${req.auth.sub}/${req.auth.role}`)
       : 'anon';
-    console.log(
-      `[http] ${req.method} ${req.originalUrl} → ${res.statusCode} (${ms}ms) ${who}`,
-    );
+    const line = `[http] ${req.method} ${req.originalUrl} → ${res.statusCode} (${ms}ms) ${who}\n`;
+    tee.write(line);
   });
-  next();
+  return next();
+}
+
+export function logHttpBanner() {
+  console.log('------------------------------------------');
+  console.log(`  HTTP logging: morgan '${process.env.MORGAN_FORMAT || FORMAT}' + [http] echo`);
+  console.log('  Console : this terminal (npm run dev)');
+  console.log(`  File    : ${HTTP_LOG_PATH}`);
+  console.log('------------------------------------------');
 }
 
 export default requestLogger;

@@ -22,6 +22,7 @@ const COLUMNS = [
   { table: 'lessons', column: 'resources', clause: 'resources JSON NULL' },
   { table: 'units', column: 'teach_content', clause: 'teach_content JSON NULL' },
   { table: 'questions', column: 'content', clause: 'content JSON NULL' },
+  { table: 'scripts', column: 'language_id', clause: 'language_id INT UNSIGNED NULL' },
 ];
 
 // Idempotent enum widenings: [{ table, column, type, mustInclude }]
@@ -32,6 +33,12 @@ const ENUMS = [
     column: 'kind',
     type: "ENUM('mcq','fill','match','listen') NOT NULL",
     mustInclude: "'listen'",
+  },
+  {
+    table: 'culture_cards',
+    column: 'kind',
+    type: "ENUM('text','fact','proverb','steps','vocab','calendar','media','music') NOT NULL DEFAULT 'text'",
+    mustInclude: "'music'",
   },
 ];
 
@@ -85,6 +92,195 @@ const TABLES = {
     promotions TINYINT(1) NOT NULL DEFAULT 0,
     CONSTRAINT fk_np_user FOREIGN KEY (user_id)
       REFERENCES app_users(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB;`,
+  unit_likes: `CREATE TABLE IF NOT EXISTS unit_likes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    unit_id INT UNSIGNED NOT NULL,
+    UNIQUE KEY uq_unit_like (user_id, unit_id)
+  ) ENGINE=InnoDB;`,
+  unit_comments: `CREATE TABLE IF NOT EXISTS unit_comments (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    unit_id INT UNSIGNED NOT NULL,
+    body VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_unit_comment (unit_id)
+  ) ENGINE=InnoDB;`,
+  language_likes: `CREATE TABLE IF NOT EXISTS language_likes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    language_id INT UNSIGNED NOT NULL,
+    UNIQUE KEY uq_lang_like (user_id, language_id)
+  ) ENGINE=InnoDB;`,
+  language_comments: `CREATE TABLE IF NOT EXISTS language_comments (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    language_id INT UNSIGNED NOT NULL,
+    body VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_lang_comment (language_id)
+  ) ENGINE=InnoDB;`,
+  culture_units: `CREATE TABLE IF NOT EXISTS culture_units (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    language_id INT UNSIGNED NOT NULL,
+    title VARCHAR(160) NOT NULL,
+    subtitle VARCHAR(200) DEFAULT '',
+    theme VARCHAR(40) DEFAULT 'fact',
+    color_hex CHAR(7) NOT NULL DEFAULT '#078930',
+    dark_hex CHAR(7) NOT NULL DEFAULT '#056B24',
+    icon VARCHAR(64) DEFAULT 'menu_book_rounded',
+    sort_order INT NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    INDEX idx_cu_lang (language_id)
+  ) ENGINE=InnoDB;`,
+  culture_cards: `CREATE TABLE IF NOT EXISTS culture_cards (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    culture_unit_id INT UNSIGNED NOT NULL,
+    kind VARCHAR(20) NOT NULL DEFAULT 'text',
+    title VARCHAR(200) NOT NULL,
+    body TEXT,
+    content JSON NULL,
+    translit VARCHAR(300) DEFAULT '',
+    audio_url VARCHAR(255) DEFAULT '',
+    pdf_url VARCHAR(255) DEFAULT '',
+    resources JSON NULL,
+    vocab JSON NULL,
+    meta JSON NULL,
+    xp_reward INT NOT NULL DEFAULT 5,
+    sort_order INT NOT NULL DEFAULT 0,
+    INDEX idx_cc_unit (culture_unit_id)
+  ) ENGINE=InnoDB;`,
+  culture_progress: `CREATE TABLE IF NOT EXISTS culture_progress (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    culture_card_id INT UNSIGNED NOT NULL,
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_culture_done (user_id, culture_card_id)
+  ) ENGINE=InnoDB;`,
+  culture_unit_likes: `CREATE TABLE IF NOT EXISTS culture_unit_likes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    culture_unit_id INT UNSIGNED NOT NULL,
+    UNIQUE KEY uq_culture_unit_like (user_id, culture_unit_id),
+    INDEX idx_cu_like (culture_unit_id)
+  ) ENGINE=InnoDB;`,
+  culture_unit_comments: `CREATE TABLE IF NOT EXISTS culture_unit_comments (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    culture_unit_id INT UNSIGNED NOT NULL,
+    body VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_cu_comment (culture_unit_id)
+  ) ENGINE=InnoDB;`,
+  community_stories: `CREATE TABLE IF NOT EXISTS community_stories (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    language_code VARCHAR(8) NOT NULL DEFAULT 'am',
+    title VARCHAR(160) NOT NULL,
+    body TEXT NOT NULL,
+    audio_url VARCHAR(255) DEFAULT '',
+    status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    moderator_note VARCHAR(255) DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_story_status (status),
+    INDEX idx_story_user (user_id)
+  ) ENGINE=InnoDB;`,
+  exchange_signups: `CREATE TABLE IF NOT EXISTS exchange_signups (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    speaks VARCHAR(8) NOT NULL,
+    learning VARCHAR(8) NOT NULL,
+    note VARCHAR(300) DEFAULT '',
+    status ENUM('waiting','matched','closed') NOT NULL DEFAULT 'waiting',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_exchange_user (user_id)
+  ) ENGINE=InnoDB;`,
+  scripts: `CREATE TABLE IF NOT EXISTS scripts (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(16) NOT NULL UNIQUE,
+    name VARCHAR(80) NOT NULL,
+    native_name VARCHAR(120) DEFAULT '',
+    direction ENUM('ltr','rtl') NOT NULL DEFAULT 'ltr',
+    family VARCHAR(60) DEFAULT '',
+    sample VARCHAR(40) DEFAULT '',
+    description VARCHAR(500) DEFAULT '',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0
+  ) ENGINE=InnoDB;`,
+  script_letters: `CREATE TABLE IF NOT EXISTS script_letters (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    script_id INT UNSIGNED NOT NULL,
+    glyph VARCHAR(8) NOT NULL,
+    name VARCHAR(80) DEFAULT '',
+    roman VARCHAR(40) DEFAULT '',
+    sound VARCHAR(40) DEFAULT '',
+    order_name VARCHAR(20) DEFAULT '',
+    form_index INT NOT NULL DEFAULT 0,
+    audio_url VARCHAR(255) DEFAULT '',
+    notes VARCHAR(300) DEFAULT '',
+    meta JSON NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    INDEX idx_sl_script (script_id),
+    UNIQUE KEY uq_script_glyph (script_id, glyph, form_index)
+  ) ENGINE=InnoDB;`,
+  language_scripts: `CREATE TABLE IF NOT EXISTS language_scripts (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    language_id INT UNSIGNED NOT NULL,
+    script_id INT UNSIGNED NOT NULL,
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
+    role VARCHAR(40) DEFAULT 'primary',
+    sort_order INT NOT NULL DEFAULT 0,
+    UNIQUE KEY uq_lang_script (language_id, script_id),
+    INDEX idx_ls_lang (language_id),
+    INDEX idx_ls_script (script_id)
+  ) ENGINE=InnoDB;`,
+  topic_categories: `CREATE TABLE IF NOT EXISTS topic_categories (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    language_id INT UNSIGNED NOT NULL,
+    slug VARCHAR(40) NOT NULL,
+    title VARCHAR(80) NOT NULL,
+    native_title VARCHAR(80) DEFAULT '',
+    emoji VARCHAR(16) DEFAULT '',
+    color_hex CHAR(7) DEFAULT '#078930',
+    description VARCHAR(300) DEFAULT '',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    UNIQUE KEY uq_topic_slug (language_id, slug),
+    INDEX idx_tc_lang (language_id)
+  ) ENGINE=InnoDB;`,
+  topic_words: `CREATE TABLE IF NOT EXISTS topic_words (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    category_id INT UNSIGNED NOT NULL,
+    target VARCHAR(120) NOT NULL,
+    translit VARCHAR(120) DEFAULT '',
+    meaning VARCHAR(200) DEFAULT '',
+    meanings JSON NULL,
+    audio_url VARCHAR(255) DEFAULT '',
+    image_url VARCHAR(255) DEFAULT '',
+    notes VARCHAR(300) DEFAULT '',
+    sort_order INT NOT NULL DEFAULT 0,
+    INDEX idx_tw_cat (category_id)
+  ) ENGINE=InnoDB;`,
+  ads: `CREATE TABLE IF NOT EXISTS ads (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(120) NOT NULL,
+    body VARCHAR(300) DEFAULT '',
+    image_url VARCHAR(255) DEFAULT '',
+    cta_label VARCHAR(40) DEFAULT 'Learn more',
+    position VARCHAR(40) NOT NULL DEFAULT 'home_top',
+    action_type ENUM('url','screen','topic','culture','none') NOT NULL DEFAULT 'url',
+    action_value VARCHAR(255) DEFAULT '',
+    language_code VARCHAR(8) DEFAULT '',
+    priority INT NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    starts_at DATETIME NULL,
+    ends_at DATETIME NULL,
+    impressions INT NOT NULL DEFAULT 0,
+    clicks INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ad_pos (position, is_active),
+    INDEX idx_ad_live (starts_at, ends_at)
   ) ENGINE=InnoDB;`,
   base_languages: `CREATE TABLE IF NOT EXISTS base_languages (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

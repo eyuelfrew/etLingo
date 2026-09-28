@@ -24,11 +24,24 @@ import '../modules/auth/auth.models.js';
 import '../modules/users/users.models.js';
 import '../modules/content/content.models.js';
 import '../modules/notifications/notifications.models.js';
+import '../modules/engagement/engagement.models.js';
+import '../modules/engagement/culture_engagement.js';
+import '../modules/culture/culture.models.js';
+import '../modules/community/community.models.js';
+import '../modules/scripts/scripts.models.js';
+import '../modules/topics/topics.models.js';
+import '../modules/ads/ads.models.js';
 
 import authRoutes from './auth/auth.routes.js';
 import contentRoutes from './content/content.routes.js';
 import usersRoutes from './users/users.routes.js';
 import notificationRoutes from './notifications/notifications.routes.js';
+import engagementRoutes from './engagement/engagement.routes.js';
+import cultureRoutes from './culture/culture.routes.js';
+import communityRoutes from './community/community.routes.js';
+import scriptsRoutes from './scripts/scripts.routes.js';
+import topicsRoutes from './topics/topics.routes.js';
+import adsRoutes from './ads/ads.routes.js';
 import mediaRoutes from '../routes/media.routes.js';
 
 export function initModels() {
@@ -44,6 +57,12 @@ export function buildModuleRouters() {
   root.use(contentRoutes);        // /app/languages, /app/bootstrap/:code, /admin/{languages,units,...}
   root.use(usersRoutes);          // /admin/app-users
   root.use(notificationRoutes);   // /app/notifications, /admin/notifications
+  root.use(engagementRoutes);     // likes + comments on units & languages
+  root.use(cultureRoutes);        // Culture Path (parallel to language lessons)
+  root.use(communityRoutes);      // community stories + language exchange
+  root.use(scriptsRoutes);        // writing systems + alphabets (fidel, …)
+  root.use(topicsRoutes);         // topic word packs (animals, food, …)
+  root.use(adsRoutes);            // in-house promo slots (not AdMob)
   root.use(mediaRoutes);          // /media/* — S3 proxy for audio/PDF playback
 
   return root;

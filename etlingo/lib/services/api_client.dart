@@ -50,16 +50,34 @@ class ApiClient {
   }
 
   dynamic _decode(http.Response response) {
+    final raw = response.body;
     if (response.statusCode >= 400) {
       String message = 'Request failed (${response.statusCode})';
       try {
-        final data = jsonDecode(response.body);
+        final data = raw.isEmpty ? null : jsonDecode(raw);
         if (data is Map && data['error'] is String) message = data['error'] as String;
       } catch (_) {}
       throw ApiException(response.statusCode, message);
     }
-    if (response.body.isEmpty) return null;
-    return jsonDecode(response.body);
+    if (raw.isEmpty) return null;
+    final trimmed = raw.trim();
+    // Some proxies / empty handlers return the literal text "null".
+    if (trimmed == 'null' || trimmed == 'undefined') return null;
+    try {
+      return jsonDecode(trimmed);
+    } catch (_) {
+      throw ApiException(response.statusCode, 'Invalid server response');
+    }
+  }
+
+  static String describeError(Object e) {
+    if (e is ApiException) {
+      if (e.statusCode == 401) {
+        return 'Please sign in to like or comment.';
+      }
+      return e.message;
+    }
+    return 'Network error — check that the backend is running.';
   }
 
   Future<dynamic> get(String path, {bool auth = true}) async {
@@ -67,9 +85,23 @@ class ApiClient {
     return _decode(r);
   }
 
-  Future<dynamic> post(String path, {Object? body, bool auth = true}) async {
+  /// GET that attaches a JWT **when available** (public + likedByMe).
+  Future<dynamic> getWithOptionalAuth(String path) async {
+    final token = await tokenProvider();
+    final hasToken = token != null && token.isNotEmpty;
     final r = await _send(
-      (uri, h) => http.post(uri, headers: h, body: jsonEncode(body)),
+      (uri, h) => http.get(uri, headers: h),
+      path,
+      auth: hasToken,
+    );
+    return _decode(r);
+  }
+
+  Future<dynamic> post(String path, {Object? body, bool auth = true}) async {
+    // Express 5 rejects a top-level JSON null — send an empty object instead.
+    final payload = body == null ? '{}' : jsonEncode(body);
+    final r = await _send(
+      (uri, h) => http.post(uri, headers: h, body: payload),
       path,
       body: body,
       auth: auth,

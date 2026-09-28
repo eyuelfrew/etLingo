@@ -3,7 +3,6 @@ import '../../core/ui/et_strings.dart';
 import '../../core/widgets/et_bottom_nav.dart';
 import '../../state/app_state.dart';
 import 'learn_path_screen.dart';
-import 'phrasebook_screen.dart';
 import 'profile_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -19,10 +18,9 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    // Learn · Words · You (Rank removed — mock leaderboard, not needed)
+    // Minimal chrome: course path + profile only.
     final pages = [
       LearnPathScreen(state: widget.state),
-      PhrasebookScreen(state: widget.state),
       ProfileScreen(state: widget.state),
     ];
 

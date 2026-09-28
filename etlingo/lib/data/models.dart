@@ -324,6 +324,7 @@ class Unit {
   final IconData icon;
   final List<Lesson> lessons;
   final List<TeachItem> teachItems;
+  final int? dbId;
   const Unit({
     required this.title,
     required this.subtitle,
@@ -332,6 +333,7 @@ class Unit {
     required this.icon,
     required this.lessons,
     this.teachItems = const [],
+    this.dbId,
   });
 
   factory Unit.fromJson(Map<String, dynamic> j, {required List<Lesson> lessons}) {
@@ -342,6 +344,7 @@ class Unit {
             .map((e) => TeachItem.fromJson(Map<String, dynamic>.from(e)))
             .toList()
         : const <TeachItem>[];
+    final rawId = j['id'];
     return Unit(
       title: (j['title'] ?? '').toString(),
       subtitle: (j['subtitle'] ?? '').toString(),
@@ -350,6 +353,7 @@ class Unit {
       icon: iconFromName(j['icon']?.toString()),
       lessons: lessons,
       teachItems: teachItems,
+      dbId: rawId is num ? rawId.toInt() : int.tryParse(rawId?.toString() ?? ''),
     );
   }
 
@@ -389,6 +393,7 @@ class Phrase {
 
 class Language {
   final String id;
+  final int? dbId;
   final String name;
   final String nativeName;
   final String scriptPreview;
@@ -405,6 +410,7 @@ class Language {
 
   const Language({
     required this.id,
+    this.dbId,
     required this.name,
     required this.nativeName,
     required this.scriptPreview,
@@ -420,10 +426,12 @@ class Language {
     required this.phrases,
   });
 
-  /// Metadata-only language (used for the picker before content is loaded).
   factory Language.summaryJson(Map<String, dynamic> j) {
+    final id = (j['id'] ?? '').toString();
+    final rawDb = j['dbId'] ?? j['db_id'];
     return Language(
-      id: (j['id'] ?? '').toString(),
+      id: id,
+      dbId: rawDb is num ? rawDb.toInt() : int.tryParse(rawDb?.toString() ?? ''),
       name: (j['name'] ?? '').toString(),
       nativeName: (j['nativeName'] ?? '').toString(),
       scriptPreview: (j['scriptPreview'] ?? '').toString(),
@@ -439,7 +447,6 @@ class Language {
     );
   }
 
-  /// Full language incl. units/lessons/questions/phrases from `/app/bootstrap/:code`.
   factory Language.fullJson(
     Map<String, dynamic> lang,
     List<dynamic> unitList,
@@ -449,7 +456,6 @@ class Language {
   ) {
     final summary = Language.summaryJson(lang);
 
-    // Group questions under their lesson, then lessons under their unit.
     final questionsByLesson = <String, List<Question>>{};
     for (final raw in questionList) {
       final q = raw as Map<String, dynamic>;
@@ -474,6 +480,7 @@ class Language {
 
     return Language(
       id: summary.id,
+      dbId: summary.dbId,
       name: summary.name,
       nativeName: summary.nativeName,
       scriptPreview: summary.scriptPreview.isEmpty

@@ -1,6 +1,7 @@
 node_modules/
 .env
 uploads/
+logs/
 *-firebase-adminsdk-*.json
 serviceAccountKey*.json
 **/s3-strag.md

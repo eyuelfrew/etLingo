@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import client from '../api/client';
+import { useNavigate } from 'react-router-dom';
+import client, { apiError } from '../api/client';
 import {
   PageHeader,
   Button,
@@ -30,6 +31,7 @@ const empty = {
 };
 
 export default function Languages() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState(empty);
   const [editingId, setEditingId] = useState(null);
@@ -76,6 +78,28 @@ export default function Languages() {
     setEditingId(row.id);
     setForm({ ...empty, ...row });
     setOpen(true);
+  };
+
+  // After saving a NEW language, offer to set up its script/alphabet immediately.
+  const saveAndMaybeScript = async (e) => {
+    e.preventDefault();
+    const wasNew = !editingId;
+    const code = String(form.code || '').trim().toLowerCase();
+    await save(e);
+    if (!wasNew) return;
+    try {
+      const { data } = await client.get('/admin/languages');
+      const created = (data || []).find(
+        (r) => String(r.code || '').toLowerCase() === code,
+      );
+      if (!created) return;
+      const ok = confirm(
+        `"${created.native_name || created.name}" created.\n\nSet up its writing system & alphabet now?`,
+      );
+      if (ok) navigate(`/scripts?langId=${created.id}`);
+    } catch {
+      // language already saved — ignore
+    }
   };
 
   return (
@@ -169,6 +193,34 @@ export default function Languages() {
                     </td>
                     <td className={`${tdCls} text-right whitespace-nowrap`}>
                       <button
+                        onClick={() => navigate(`/scripts?langId=${r.id}`)}
+                        className="mr-3 text-[13px] font-semibold text-et-green hover:underline"
+                        title="Manage writing system & alphabet"
+                      >
+                        Script
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const { data } = await client.get(
+                              `/admin/engagement/languages/${r.id}`,
+                            );
+                            alert(
+                              `${r.name}: ${data.likes} likes, ${data.commentCount} comments\n\n` +
+                                (data.comments || [])
+                                  .slice(0, 8)
+                                  .map((c) => `• ${c.author}: ${c.body}`)
+                                  .join('\n'),
+                            );
+                          } catch (e) {
+                            alert(apiError(e, 'Failed to load engagement'));
+                          }
+                        }}
+                        className="mr-3 text-[12px] font-semibold text-et-yellow-dark hover:underline"
+                      >
+                        ♥
+                      </button>
+                      <button
                         onClick={() => edit(r)}
                         className="mr-3 text-[13px] font-semibold text-et-blue hover:underline"
                       >
@@ -206,7 +258,7 @@ export default function Languages() {
             </>
           }
         >
-          <form id="lang-form" onSubmit={save} className="grid grid-cols-2 gap-4">
+          <form id="lang-form" onSubmit={saveAndMaybeScript} className="grid grid-cols-2 gap-4">
             <Field label="Code *">
               <input
                 className={inputCls}
