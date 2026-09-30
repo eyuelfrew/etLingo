@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, requireAppAuth } from '../../core/auth.js';
 import {
-  list, getOne, create, update, resetProgress, remove,
+  list, getOne, create, update, resetProgress, cancelSubscription, remove,
   registerFcmToken, unregisterFcmToken,
   getMyProgress, completeLesson, resetMyProgress,
 } from './users.controller.js';
@@ -15,6 +15,8 @@ router.post('/admin/app-users', requireAuth, create);
 router.get('/admin/app-users/:id', requireAuth, getOne);
 router.put('/admin/app-users/:id', requireAuth, update);
 router.post('/admin/app-users/:id/reset-progress', requireAuth, resetProgress);
+router.post('/admin/app-users/:id/cancel-subscription', requireAuth, cancelSubscription);
+router.post('/admin/app-users/:id/cancel-subscription', requireAuth, cancelSubscription);
 router.delete('/admin/app-users/:id', requireAuth, remove);
 
 // ── App-user device push token (mobile app self-service) ──────────────────────

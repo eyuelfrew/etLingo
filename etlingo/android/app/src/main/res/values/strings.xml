@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">etlingo</string>
+    <!-- Facebook Login — replace with your real App ID / Client Token -->
+    <string name="facebook_app_id">REPLACE_FACEBOOK_APP_ID</string>
+    <string name="facebook_client_token">REPLACE_FACEBOOK_CLIENT_TOKEN</string>
+    <string name="fb_login_protocol_scheme">fbREPLACE_FACEBOOK_APP_ID</string>
+</resources>

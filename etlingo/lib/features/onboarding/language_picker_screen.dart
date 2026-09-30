@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/ui/et_strings.dart';
+import '../../core/widgets/exit_guard.dart';
 import '../../core/widgets/tibeb_band.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
@@ -61,7 +62,8 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    return Scaffold(
+    return ExitGuard(
+      child: Scaffold(
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -97,6 +99,7 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
             Expanded(child: _buildList(context, state)),
           ],
         ),
+      ),
       ),
     );
   }

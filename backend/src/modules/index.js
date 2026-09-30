@@ -31,6 +31,8 @@ import '../modules/community/community.models.js';
 import '../modules/scripts/scripts.models.js';
 import '../modules/topics/topics.models.js';
 import '../modules/ads/ads.models.js';
+import '../modules/entitlements/entitlements.models.js';
+import '../modules/entitlements/plans.models.js';
 
 import authRoutes from './auth/auth.routes.js';
 import contentRoutes from './content/content.routes.js';
@@ -42,6 +44,7 @@ import communityRoutes from './community/community.routes.js';
 import scriptsRoutes from './scripts/scripts.routes.js';
 import topicsRoutes from './topics/topics.routes.js';
 import adsRoutes from './ads/ads.routes.js';
+import entitlementsRoutes from './entitlements/entitlements.routes.js';
 import mediaRoutes from '../routes/media.routes.js';
 
 export function initModels() {
@@ -63,6 +66,7 @@ export function buildModuleRouters() {
   root.use(scriptsRoutes);        // writing systems + alphabets (fidel, …)
   root.use(topicsRoutes);         // topic word packs (animals, food, …)
   root.use(adsRoutes);            // in-house promo slots (not AdMob)
+  root.use(entitlementsRoutes);   // premium access + checkout stub
   root.use(mediaRoutes);          // /media/* — S3 proxy for audio/PDF playback
 
   return root;

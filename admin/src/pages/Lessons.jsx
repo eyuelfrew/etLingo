@@ -37,9 +37,16 @@ const emptyUnit = (sort) => ({
   dark_hex: '#056B24',
   icon: 'waving_hand_rounded',
   sort_order: sort,
+  price_cents: 0,
 });
 
-const emptyLesson = (sort) => ({ title: '', is_boss: false, xp_reward: 10, sort_order: sort });
+const emptyLesson = (sort) => ({
+  title: '',
+  is_boss: false,
+  xp_reward: 10,
+  sort_order: sort,
+  access_level: 'free',
+});
 
 export default function Lessons() {
   const [languages, setLanguages] = useState([]);
@@ -274,6 +281,7 @@ export default function Lessons() {
         title: String(lessonCtx.title || '').trim(),
         is_boss: !!lessonCtx.is_boss,
         xp_reward: Number(lessonCtx.xp_reward) || 10,
+        access_level: lessonCtx.access_level || 'free',
         sort_order: Number(lessonCtx.sort_order) || 0,
         unit_id: Number(lessonCtx.unitId),
       };
@@ -595,6 +603,7 @@ export default function Lessons() {
                                     is_boss: lesson.is_boss,
                                     xp_reward: lesson.xp_reward,
                                     sort_order: lesson.sort_order,
+                                    access_level: lesson.access_level || 'free',
                                   });
                                 }}
                                 className="mr-2 font-bold text-et-blue hover:underline"
@@ -696,6 +705,15 @@ export default function Lessons() {
               <ColorField label="Color" value={unitForm.color_hex} onChange={(v) => setUnitForm({ ...unitForm, color_hex: v })} />
               <ColorField label="Dark color" value={unitForm.dark_hex} onChange={(v) => setUnitForm({ ...unitForm, dark_hex: v })} />
               <Field label="Sort order" type="number" value={unitForm.sort_order} onChange={(v) => setUnitForm({ ...unitForm, sort_order: Number(v) })} />
+              <Field label="Price (cents)" hint="0 = free · 100 = 1 ETB one-time unlock">
+                <input
+                  type="number"
+                  min={0}
+                  value={unitForm.price_cents ?? 0}
+                  onChange={(e) => setUnitForm({ ...unitForm, price_cents: Number(e.target.value) })}
+                  className="w-full rounded-xl border border-line px-3 py-2.5 text-sm outline-none focus:border-et-green"
+                />
+              </Field>
             </div>
             <div className="mt-4">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">Icon</span>
@@ -730,6 +748,13 @@ export default function Lessons() {
                 <Field label="XP reward" type="number" value={lessonCtx.xp_reward} onChange={(v) => setLessonCtx({ ...lessonCtx, xp_reward: v })} />
                 <Field label="Sort order" type="number" value={lessonCtx.sort_order} onChange={(v) => setLessonCtx({ ...lessonCtx, sort_order: v })} />
               </div>
+              <SelectField
+                label="Access"
+                hint="Premium = learners need a subscription"
+                value={lessonCtx.access_level || 'free'}
+                onChange={(v) => setLessonCtx({ ...lessonCtx, access_level: v })}
+                options={ACCESS_OPTIONS}
+              />
               <label className="flex items-center gap-2 text-sm font-semibold">
                 <input
                   type="checkbox"
@@ -832,6 +857,33 @@ function Field({ label, value, onChange, type = 'text', required, placeholder })
     </label>
   );
 }
+
+function SelectField({ label, hint, value, onChange, options }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted">{label}</span>
+      <select
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none focus:border-et-green"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      {hint && (
+        <span className="mt-1 block text-[11px] text-muted">{hint}</span>
+      )}
+    </label>
+  );
+}
+
+const ACCESS_OPTIONS = [
+  { value: 'free', label: 'Free' },
+  { value: 'premium', label: 'Requires subscription' },
+];
 
 function ColorField({ label, value, onChange }) {
   return (

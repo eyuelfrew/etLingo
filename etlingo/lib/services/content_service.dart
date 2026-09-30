@@ -29,16 +29,31 @@ class ContentService {
     return rows.isEmpty ? BaseLanguageOption.defaults : rows;
   }
 
-  Future<Language?> loadLanguageContent(String code) async {
-    final data = await _client.get('/app/bootstrap/$code', auth: false);
-    if (data is! Map<String, dynamic>) return null;
-    return Language.fullJson(
+  Future<
+      ({
+        Language? language,
+        List<int> purchasedUnitIds,
+      })> loadLanguageContent(String code) async {
+    final data = await _client.getWithOptionalAuth('/app/bootstrap/$code');
+    if (data is! Map<String, dynamic>) {
+      return (language: null, purchasedUnitIds: const <int>[]);
+    }
+    final lang = Language.fullJson(
       (data['language'] ?? const {}) as Map<String, dynamic>,
       (data['units'] ?? const []) as List<dynamic>,
       (data['lessons'] ?? const []) as List<dynamic>,
       (data['questions'] ?? const []) as List<dynamic>,
       (data['phrases'] ?? const []) as List<dynamic>,
     );
+    final raw = data['purchasedUnitIds'];
+    final ids = <int>[];
+    if (raw is List) {
+      for (final x in raw) {
+        final n = x is num ? x.toInt() : int.tryParse('$x');
+        if (n != null) ids.add(n);
+      }
+    }
+    return (language: lang, purchasedUnitIds: ids);
   }
 }
 

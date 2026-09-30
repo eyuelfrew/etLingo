@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/ui/et_strings.dart';
 import '../../core/widgets/et_bottom_nav.dart';
+import '../../core/widgets/exit_guard.dart';
 import '../../state/app_state.dart';
+import '../script/script_home_screen.dart';
 import 'learn_path_screen.dart';
 import 'profile_screen.dart';
 
@@ -18,20 +20,22 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    // Minimal chrome: course path + profile only.
     final pages = [
       LearnPathScreen(state: widget.state),
+      ScriptHomeScreen(state: widget.state),
       ProfileScreen(state: widget.state),
     ];
 
     return ListenableBuilder(
       listenable: Listenable.merge([widget.state, EtStrings.langNotifier]),
-      builder: (context, _) => Scaffold(
-        backgroundColor: Colors.white,
-        body: IndexedStack(index: _tab, children: pages),
-        bottomNavigationBar: EtBottomNav(
-          index: _tab,
-          onChanged: (i) => setState(() => _tab = i),
+      builder: (context, _) => ExitGuard(
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: IndexedStack(index: _tab, children: pages),
+          bottomNavigationBar: EtBottomNav(
+            index: _tab,
+            onChanged: (i) => setState(() => _tab = i),
+          ),
         ),
       ),
     );

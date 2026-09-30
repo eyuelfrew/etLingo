@@ -278,6 +278,7 @@ class Lesson {
   final String title;
   final bool isBoss;
   final int xpReward;
+  final String accessLevel;
   final List<Question> questions;
   final List<TeachItem> teachItems;
   final List<LessonFileResource> resources;
@@ -286,10 +287,13 @@ class Lesson {
     this.title, {
     this.isBoss = false,
     this.xpReward = 10,
+    this.accessLevel = 'free',
     required this.questions,
     this.teachItems = const [],
     this.resources = const [],
   });
+
+  bool get isPremium => accessLevel == 'premium';
 
   factory Lesson.fromJson(Map<String, dynamic> j, {required List<Question> questions}) {
     final rawTeach = j['teachContent'];
@@ -309,6 +313,7 @@ class Lesson {
       (j['title'] ?? '').toString(),
       isBoss: j['isBoss'] == true || j['isBoss'] == 1,
       xpReward: (j['xpReward'] is num) ? (j['xpReward'] as num).toInt() : 10,
+      accessLevel: (j['accessLevel'] ?? 'free').toString(),
       questions: questions,
       teachItems: teachItems,
       resources: resources,
@@ -325,6 +330,9 @@ class Unit {
   final List<Lesson> lessons;
   final List<TeachItem> teachItems;
   final int? dbId;
+  final String accessLevel;
+  final int priceCents;
+  final bool paid;
   const Unit({
     required this.title,
     required this.subtitle,
@@ -334,7 +342,16 @@ class Unit {
     required this.lessons,
     this.teachItems = const [],
     this.dbId,
+    this.accessLevel = 'free',
+    this.priceCents = 0,
+    this.paid = false,
   });
+
+  bool get isPremium => paid || accessLevel == 'premium';
+  bool get isPaid => priceCents > 0;
+  String get priceLabel => isPaid
+      ? '${(priceCents / 100).toStringAsFixed(2)} ETB'
+      : 'Free';
 
   factory Unit.fromJson(Map<String, dynamic> j, {required List<Lesson> lessons}) {
     final rawTeach = j['teachContent'] ?? j['teach_content'];
@@ -354,6 +371,9 @@ class Unit {
       lessons: lessons,
       teachItems: teachItems,
       dbId: rawId is num ? rawId.toInt() : int.tryParse(rawId?.toString() ?? ''),
+      accessLevel: (j['accessLevel'] ?? 'free').toString(),
+      priceCents: (j['priceCents'] as num?)?.toInt() ?? 0,
+      paid: j['paid'] == true,
     );
   }
 

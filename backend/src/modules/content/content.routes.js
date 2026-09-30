@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../../core/auth.js';
+import { requireAuth, optionalAppAuth } from '../../core/auth.js';
 import {
   languages, units, lessons, questions, phrases, baseLanguages,
   dashboardStats, appLanguages, bootstrap, languagePhrases, appBaseLanguages,
@@ -12,7 +12,7 @@ const router = Router();
 // ── Public (mobile app) ───────────────────────────────────────────────────────
 router.get('/app/languages', appLanguages);
 router.get('/app/base-languages', appBaseLanguages);
-router.get('/app/bootstrap/:code', bootstrap);
+router.get('/app/bootstrap/:code', optionalAppAuth, bootstrap);
 router.get('/app/:code/phrases', languagePhrases);
 
 // ── Admin content management ──────────────────────────────────────────────────

@@ -30,9 +30,12 @@ class EtStrings {
 
   // Nav
   static String get tabLearn => _t('Learn', 'ተምር');
+  static String get tabScript => _t('Script', 'ፊደል');
   static String get tabWords => _t('Words', 'ቃላት');
   static String get tabRank => _t('Rank', 'ደረጃ');
   static String get tabYou => _t('You', 'እርስዎ');
+  static String get pressBackAgain =>
+      _t('Press back again to exit', 'ለመውጣት እንደገና ተመለስ');
   static String get tabRead => _t('Read', 'ንባብ');
   static String get cultureTab => _t('Culture', 'ባህል');
 
@@ -180,7 +183,17 @@ class EtStrings {
   static String get lockedHint =>
       _t('Finish the previous lesson first', 'ቀድሞ ያለውን ትምህርት ያጠናቅቁ');
   static String get premiumSoon =>
-      _t('Premium lesson — coming soon', 'የክፍያ ትምህርት — በቅርቡ');
+      _t('Chapter locked', 'ክፍሉ ተቆልፏል');
+  static String get subscribeTitle =>
+      _t('Unlock this chapter', 'ይህን ክፍል ይክፈቱ');
+  static String get subscribeBody => _t(
+        'Pay once for this chapter (or unit) — free chapters stay open.',
+        'በዚህ ክፍል አንድ ጊዜ ይክፈቱ — ነፃ ክፍሎች ክፍት ናቸው።',
+      );
+  static String get buyChapter => _t('Unlock chapter', 'ክፍል ይክፈቱ');
+  static String get alreadyUnlocked =>
+      _t('Already unlocked', 'ቀድሞ ተከፍቷል');
+  static String get okGotIt => _t('Got it', 'ተረድቻለሁ');
   static String get browseLessons =>
       _t('Browse chapters & lessons', 'ክፍሎችና ትምህርቶችን ይመልከቱ');
   static String get noLessonsYet => _t('No lessons yet', 'ትምህርቶች አልተገኙም');

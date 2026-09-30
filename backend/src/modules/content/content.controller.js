@@ -71,7 +71,7 @@ const languages = makeCrud(Language,
   },
 );
 
-const units = makeCrud(Unit, ['language_id', 'title', 'subtitle', 'color_hex', 'dark_hex', 'icon', 'sort_order'], ['teach_content']);
+const units = makeCrud(Unit, ['language_id', 'title', 'subtitle', 'color_hex', 'dark_hex', 'icon', 'sort_order', 'price_cents'], ['teach_content']);
 
 const lessons = makeCrud(Lesson, ['unit_id', 'title', 'is_boss', 'xp_reward', 'sort_order'], ['teach_content', 'resources'], {
   // New lesson published → announce it with its language for context.
@@ -188,6 +188,11 @@ export async function bootstrap(req, res) {
   unitsOut.forEach(u => {
     delete u.color_hex; delete u.dark_hex; delete u.language_id;
     delete u.sort_order; delete u.created_at; delete u.teach_content;
+    const cents = Number(u.price_cents) || 0;
+    u.priceCents = cents;
+    u.paid = cents > 0;
+    delete u.price_cents;
+    delete u.access_level;
   });
 
   const lessonsOut = lessonsList.map(l => {
@@ -203,8 +208,8 @@ export async function bootstrap(req, res) {
   });
   lessonsOut.forEach(l => {
     delete l.is_boss; delete l.xp_reward; delete l.teach_content;
-    // keep camelCase `resources` for the mobile app
     delete l.unit_id; delete l.sort_order; delete l.created_at;
+    delete l.access_level;
   });
 
   const questionsOut = questionsList.map(q => {
@@ -223,12 +228,33 @@ export async function bootstrap(req, res) {
   });
   questionsOut.forEach(q => { delete q.sub_prompt; delete q.lesson_id; delete q.sort_order; delete q.created_at; });
 
+  // Chapter purchases (one-time) — list unlocked unit ids for this user.
+  let purchasedUnitIds = [];
+  if (req.auth?.sub != null && req.auth.role === 'app_user') {
+    try {
+      const { Entitlement } = await import('../entitlements/entitlements.models.js');
+      const rows = await Entitlement.findAll({
+        where: { user_id: Number(req.auth.sub), scope: 'unit' },
+      });
+      const now = new Date();
+      purchasedUnitIds = rows
+        .filter((r) => !r.expires_at || new Date(r.expires_at) >= now)
+        .map((r) => r.scope_id)
+        .filter((id) => id != null);
+    } catch {
+      purchasedUnitIds = [];
+    }
+  }
+
   res.json({
     language: langOut,
     units: unitsOut,
     lessons: lessonsOut,
     questions: questionsOut,
     phrases: phrasesList.map(p => p.toJSON()),
+    purchasedUnitIds,
+    billingModel: 'unit_purchase',
+    paymentEnabled: true,
   });
 }
 

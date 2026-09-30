@@ -88,22 +88,13 @@ class _SplashScreenState extends State<SplashScreen>
                         children: [
                           const _Emblem(),
                           const SizedBox(height: 28),
-                          ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [
-                                EtColors.yellow,
-                                Color(0xFFFFE97A),
-                                EtColors.yellow
-                              ],
-                            ).createShader(bounds),
-                            child: const Text(
-                              'ኢትLang',
-                              style: TextStyle(
-                                fontSize: 42,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: -1,
-                              ),
+                          const Text(
+                            'ኢትLang',
+                            style: TextStyle(
+                              fontSize: 42,
+                              fontWeight: FontWeight.w800,
+                              color: EtColors.yellow,
+                              letterSpacing: -1,
                             ),
                           ),
                           const SizedBox(height: 10),

@@ -14,7 +14,10 @@ export const AppUser = sequelize.define('AppUser', {
   email: { type: DataTypes.STRING(190), unique: true, allowNull: true },
   display_name: { type: DataTypes.STRING(120), defaultValue: '' },
   password_hash: { type: DataTypes.STRING(255), allowNull: true },
-  provider: { type: DataTypes.ENUM('guest', 'email', 'google'), defaultValue: 'guest' },
+  provider: {
+    type: DataTypes.ENUM('guest', 'email', 'google', 'facebook', 'apple', 'other'),
+    defaultValue: 'guest',
+  },
   status: { type: DataTypes.ENUM('active', 'banned'), defaultValue: 'active' },
   xp: { type: DataTypes.INTEGER, defaultValue: 0 },
   hearts: { type: DataTypes.INTEGER, defaultValue: 5 },

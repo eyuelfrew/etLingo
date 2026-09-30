@@ -10,11 +10,12 @@ import {
   CultureUnitComment,
 } from './culture_engagement.js';
 import { asyncHandler, badRequest, unauthorized } from '../../core/http.js';
+import { sanitizeText } from '../../core/security.js';
 
 function cleanBody(body) {
-  const s = String(body || '').trim();
+  const s = sanitizeText(body, 500);
   if (!s) throw badRequest('Comment cannot be empty');
-  return s.slice(0, 500);
+  return s;
 }
 
 async function namesForUserIds(ids) {

@@ -94,6 +94,14 @@ export default function Users() {
     });
   };
 
+  const cancelSub = (u) => {
+    if (!window.confirm(`Cancel subscription for ${u.displayName || u.email}? Premium access ends immediately.`)) return;
+    run(u.id, async () => {
+      await client.post(`/admin/app-users/${u.id}/cancel-subscription`);
+      await load();
+    });
+  };
+
   const remove = (u) => {
     if (!window.confirm(`Permanently delete ${u.displayName || u.email} and all their data?`)) return;
     run(u.id, async () => {
@@ -156,6 +164,7 @@ export default function Users() {
               <th className="px-4 py-3">Hearts</th>
               <th className="px-4 py-3">Streak</th>
               <th className="px-4 py-3">Lessons</th>
+              <th className="px-4 py-3">Sub</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Push</th>
               <th className="px-4 py-3 text-right">Actions</th>
@@ -163,7 +172,7 @@ export default function Users() {
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={9} className="px-4 py-10 text-center font-medium text-muted">No learners found.</td></tr>
+              <tr><td colSpan={10} className="px-4 py-10 text-center font-medium text-muted">No learners found.</td></tr>
             )}
             {rows.map((u) => (
               <tr key={u.id} className="border-t border-line-soft hover:bg-canvas/60">
@@ -176,6 +185,15 @@ export default function Users() {
                 <td className="px-4 py-3">{u.hearts}</td>
                 <td className="px-4 py-3">{u.streak}</td>
                 <td className="px-4 py-3">{u.lessonsDone ?? 0}</td>
+                <td className="px-4 py-3">
+                  {u.subscription?.active ? (
+                    <Badge tone="success" dot>
+                      {u.subscription.sku || 'active'}
+                    </Badge>
+                  ) : (
+                    <Badge tone="neutral">Free</Badge>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <Badge tone={u.status === 'active' ? 'success' : 'danger'} dot>{u.status}</Badge>
                 </td>
@@ -190,6 +208,16 @@ export default function Users() {
                     <button title="Edit account" disabled={busyId === u.id} onClick={() => openEdit(u)} className={`${iconBtn} border-blue-200 text-et-blue hover:bg-blue-50`}>✏️</button>
                     <button title="Send notification" disabled={busyId === u.id} onClick={() => setNotifyFor(u)} className={`${iconBtn} border-amber-300 text-amber-700 hover:bg-amber-50`}>🔔</button>
                     <button title="Reset progress" disabled={busyId === u.id} onClick={() => resetProgress(u)} className={`${iconBtn} border-purple-200 text-et-green-dark hover:bg-purple-50`}>♻️</button>
+                    {u.subscription?.active && (
+                      <button
+                        title="Cancel subscription"
+                        disabled={busyId === u.id}
+                        onClick={() => cancelSub(u)}
+                        className={`${iconBtn} border-orange-200 text-orange-700 hover:bg-orange-50`}
+                      >
+                        ⊗
+                      </button>
+                    )}
                     {u.status === 'active' ? (
                       <button title="Ban account" disabled={busyId === u.id} onClick={() => setStatusFor(u, 'banned')} className={`${iconBtn} border-yellow-300 text-et-yellow-dark hover:bg-yellow-50`}>🚫</button>
                     ) : (

@@ -9,6 +9,7 @@ import '../../state/app_state.dart';
 import '../notifications/notifications_screen.dart';
 import '../notifications/notification_settings_screen.dart';
 import '../../widgets/ad_slot.dart';
+import '../billing/subscribe_plans_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final AppState state;
@@ -554,6 +555,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            // Subscription packages (admin-managed plans)
+            EtSettingsRow(
+              icon: Icons.workspace_premium_rounded,
+              color: EtColors.gold,
+              title: EtStrings.subscribeTitle,
+              subtitle: state.subscribed
+                  ? 'Active subscription'
+                  : 'View monthly & yearly packages',
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => SubscribePlansScreen(state: state),
+                ));
+              },
+            ),
             if (state.completedLessons.isNotEmpty || state.xp > 0)
               EtSettingsRow(
                 icon: Icons.restart_alt_rounded,

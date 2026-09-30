@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/exit_guard.dart';
 import '../../core/widgets/tibeb_band.dart';
 import '../../services/auth_service.dart';
 
@@ -53,6 +54,29 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen>
     }
   }
 
+  // Facebook sign-in UI is commented out until Meta verification is available.
+  // Method kept for when the Facebook button is re-enabled.
+  // Future<void> _signInWithFacebook() async {
+  //   final auth = context.read<AuthService>();
+  //   try {
+  //     setState(() {
+  //       _error = false;
+  //       _errorMsg = '';
+  //     });
+  //     await auth.signInWithFacebook();
+  //     if (auth.isSignedIn && mounted) {
+  //       Navigator.of(context).pushReplacementNamed('/pick');
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       setState(() {
+  //         _error = true;
+  //         _errorMsg = e.toString().replaceFirst('Exception: ', '');
+  //       });
+  //     }
+  //   }
+  // }
+
   void _continueAsGuest() {
     Navigator.of(context).pushReplacementNamed('/pick');
   }
@@ -61,7 +85,8 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen>
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
 
-    return Scaffold(
+    return ExitGuard(
+      child: Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -112,22 +137,14 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen>
                             ),
                           ),
                           const SizedBox(height: 28),
-                          ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [
-                                EtColors.yellow,
-                                Color(0xFFFFE97A),
-                                EtColors.yellow,
-                              ],
-                            ).createShader(bounds),
-                            child: const Text(
-                              'ኢትLang',
-                              style: TextStyle(
-                                fontSize: 42,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: -1,
-                              ),
+                          // Avoid ShaderMask (can dirty semantics parentData each frame).
+                          const Text(
+                            'ኢትLang',
+                            style: TextStyle(
+                              fontSize: 42,
+                              fontWeight: FontWeight.w800,
+                              color: EtColors.yellow,
+                              letterSpacing: -1,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -240,6 +257,35 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen>
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    // Facebook Login — disabled until Meta app review / license.
+                    // Re-enable after filling strings.xml + Firebase Facebook.
+                    // GestureDetector(
+                    //   onTap: auth.loading ? null : _signInWithFacebook,
+                    //   child: Container(
+                    //     height: 54,
+                    //     decoration: BoxDecoration(
+                    //       color: const Color(0xFF1877F2),
+                    //       borderRadius: BorderRadius.circular(16),
+                    //     ),
+                    //     child: const Row(
+                    //       mainAxisAlignment: MainAxisAlignment.center,
+                    //       children: [
+                    //         Icon(Icons.facebook_rounded,
+                    //             color: Colors.white, size: 24),
+                    //         SizedBox(width: 10),
+                    //         Text(
+                    //           'በ Facebook ይግቡ',
+                    //           style: TextStyle(
+                    //             color: Colors.white,
+                    //             fontWeight: FontWeight.w800,
+                    //             fontSize: 15.5,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
                     const SizedBox(height: 14),
                     GestureDetector(
                       onTap: auth.loading ? null : _continueAsGuest,
@@ -260,6 +306,7 @@ class _GoogleSignInScreenState extends State<GoogleSignInScreen>
             ],
           ),
         ),
+      ),
       ),
     );
   }

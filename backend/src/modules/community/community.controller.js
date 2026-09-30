@@ -1,9 +1,9 @@
 import { CommunityStory, ExchangeSignup } from './community.models.js';
 import { asyncHandler, badRequest, notFound, unauthorized } from '../../core/http.js';
+import { sanitizeText } from '../../core/security.js';
 
 function clean(s, max) {
-  const t = String(s || '').trim();
-  return t.slice(0, max);
+  return sanitizeText(s, max);
 }
 
 async function displayName(userId) {
