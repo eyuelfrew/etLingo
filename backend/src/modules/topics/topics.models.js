@@ -31,3 +31,16 @@ export const TopicWord = sequelize.define('TopicWord', {
   notes: { type: DataTypes.STRING(300), defaultValue: '' },
   sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { tableName: 'topic_words', timestamps: false });
+
+/** Which topic words a learner marked as known. */
+export const TopicWordProgress = sequelize.define('TopicWordProgress', {
+  id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+  user_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
+  topic_word_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
+  learned_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+}, {
+  tableName: 'topic_word_progress',
+  updatedAt: false,
+  createdAt: 'learned_at',
+  indexes: [{ unique: true, fields: ['user_id', 'topic_word_id'] }],
+});

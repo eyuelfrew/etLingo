@@ -1,14 +1,16 @@
 import { Router } from 'express';
 import {
-  login, me, createAdmin, changePassword, checkLoginRateLimit, googleSignIn,
+  login, me, createAdmin, changePassword, checkLoginRateLimit,
+  googleSignIn, facebookSignIn,
 } from './auth.controller.js';
 import { requireAuth, requireAppAuth } from '../../core/auth.js';
+import { authLimiter, writeLimiter } from '../../middlewares/rateLimiter.js';
 import { getAppProfile, updateAppProfile } from '../users/users.controller.js';
 
 const router = Router();
 
 // ── Admin console auth ────────────────────────────────────────────────────────
-router.post('/auth/login', (req, res, next) => {
+router.post('/auth/login', authLimiter, (req, res, next) => {
   const { email } = req.body || {};
   if (!email) return next();
 
@@ -22,12 +24,13 @@ router.post('/auth/login', (req, res, next) => {
 }, login);
 
 router.get('/auth/me', requireAuth, me);
-router.post('/auth/create-admin', requireAuth, createAdmin);
-router.post('/auth/change-password', requireAuth, changePassword);
+router.post('/auth/create-admin', authLimiter, requireAuth, createAdmin);
+router.post('/auth/change-password', authLimiter, requireAuth, changePassword);
 
 // ── Mobile app session ────────────────────────────────────────────────────────
-router.post('/app/auth/google', googleSignIn);
+router.post('/app/auth/google', authLimiter, googleSignIn);
+router.post('/app/auth/facebook', authLimiter, facebookSignIn);
 router.get('/app/auth/profile', requireAppAuth, getAppProfile);
-router.put('/app/auth/profile', requireAppAuth, updateAppProfile);
+router.put('/app/auth/profile', writeLimiter, requireAppAuth, updateAppProfile);
 
 export default router;

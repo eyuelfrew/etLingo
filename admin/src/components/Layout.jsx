@@ -80,6 +80,11 @@ const NAV_GROUPS = [
         icon: 'M3 11h18v2H3zM7 7h10v2H7zm2 8h6v2H9z',
       },
       {
+        to: '/plans',
+        label: 'Subscription packages',
+        icon: 'M4 7h16v3H4zm0 5h16v3H4zm0 5h10v2H4z',
+      },
+      {
         to: '/notifications',
         label: 'Notifications',
         icon: 'M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0',

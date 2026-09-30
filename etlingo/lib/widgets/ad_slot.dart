@@ -69,9 +69,11 @@ class _AdSlotState extends State<AdSlot> {
   Widget build(BuildContext context) {
     final ad = _ad;
     if (ad == null) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: AppAdCard(ad: ad, onTap: _tap, compact: widget.compact),
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: AppAdCard(ad: ad, onTap: _tap, compact: widget.compact),
+      ),
     );
   }
 }

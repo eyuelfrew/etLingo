@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Admin } from './auth.models.js';
 import { signToken } from '../../core/auth.js';
+import { passwordProblem, maskEmail, isEmailLike } from '../../core/security.js';
 
 function publicAdmin(admin) {
   const row = admin.toJSON();
@@ -12,13 +13,19 @@ function publicAdmin(admin) {
 export async function login(req, res) {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  if (String(password).length > 128) return res.status(401).json({ error: 'invalid credentials' });
 
-  const admin = await Admin.findOne({ where: { email: email.toLowerCase().trim() } });
-  if (!admin) return res.status(401).json({ error: 'invalid credentials' });
+  const admin = await Admin.findOne({ where: { email: String(email).toLowerCase().trim() } });
+  // Same error for unknown user vs wrong password (timing-ish via bcrypt only when exists).
+  if (!admin) {
+    await bcrypt.compare(String(password), '$2a$12$invalidinvalidinvalidinvalidinvalidinvalidinv');
+    return res.status(401).json({ error: 'invalid credentials' });
+  }
 
-  const ok = await bcrypt.compare(password, admin.password_hash);
+  const ok = await bcrypt.compare(String(password), admin.password_hash);
   if (!ok) return res.status(401).json({ error: 'invalid credentials' });
 
+  console.log(`[auth] admin login ok ${maskEmail(admin.email)}`);
   const token = signToken(admin);
   res.json({ token, ...publicAdmin(admin) });
 }
@@ -37,17 +44,20 @@ export async function createAdmin(req, res) {
 
   const { name, email, password, role } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'name, email and password required' });
-  if (password.length < 8) return res.status(400).json({ error: 'password must be at least 8 characters' });
+  if (!isEmailLike(email)) return res.status(400).json({ error: 'invalid email' });
+  const pwErr = passwordProblem(password);
+  if (pwErr) return res.status(400).json({ error: pwErr });
 
-  const existing = await Admin.findOne({ where: { email: email.toLowerCase().trim() } });
+  const existing = await Admin.findOne({ where: { email: String(email).toLowerCase().trim() } });
   if (existing) return res.status(409).json({ error: 'email already registered' });
 
   const hash = await bcrypt.hash(password, 12);
   const admin = await Admin.create({
     name,
-    email: email.toLowerCase().trim(),
+    email: String(email).toLowerCase().trim(),
     password_hash: hash,
     role: role || 'editor',
+    token_version: 0,
   });
 
   const token = signToken(admin);
@@ -57,7 +67,8 @@ export async function createAdmin(req, res) {
 export async function changePassword(req, res) {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) return res.status(400).json({ error: 'currentPassword and newPassword required' });
-  if (newPassword.length < 8) return res.status(400).json({ error: 'new password must be at least 8 characters' });
+  const pwErr = passwordProblem(newPassword);
+  if (pwErr) return res.status(400).json({ error: pwErr });
 
   const admin = await Admin.findByPk(req.auth.sub);
   if (!admin) return res.status(401).json({ error: 'admin not found' });
@@ -66,9 +77,14 @@ export async function changePassword(req, res) {
   if (!ok) return res.status(401).json({ error: 'current password is incorrect' });
 
   const hash = await bcrypt.hash(newPassword, 12);
-  await admin.update({ password_hash: hash });
+  // Bump token_version so existing JWTs stop working.
+  await admin.update({
+    password_hash: hash,
+    token_version: (admin.token_version || 0) + 1,
+  });
 
-  res.json({ message: 'password updated' });
+  const token = signToken(admin);
+  res.json({ message: 'password updated', token });
 }
 
 // Simple in-memory rate limiter for login attempts
@@ -126,8 +142,22 @@ function serializeUser(user) {
 }
 
 export const googleSignIn = asyncHandler(async (req, res) => {
+  return firebaseSessionSignIn(req, res, 'google');
+});
+
+/** Facebook Login → same Firebase session exchange (provider marked facebook). */
+export const facebookSignIn = asyncHandler(async (req, res) => {
+  return firebaseSessionSignIn(req, res, 'facebook');
+});
+
+/**
+ * Verify a Firebase ID token (Google / Facebook / any Firebase provider)
+ * and issue the etLingo app JWT.
+ */
+async function firebaseSessionSignIn(req, res, defaultProvider) {
   const { idToken } = req.body || {};
   if (!idToken) throw badRequest('Missing idToken');
+  if (String(idToken).length > 10000) throw badRequest('Invalid token');
 
   const status = getFirebaseStatus();
   if (!status.initialized) {
@@ -143,13 +173,22 @@ export const googleSignIn = asyncHandler(async (req, res) => {
     throw unauthorized('Invalid or expired Firebase token');
   }
 
+  const signInProvider =
+    (decoded.firebase && decoded.firebase.sign_in_provider) || defaultProvider;
+  const provider =
+    signInProvider === 'facebook.com' || signInProvider === 'facebook'
+      ? 'facebook'
+      : signInProvider === 'google.com' || signInProvider === 'google'
+        ? 'google'
+        : signInProvider || defaultProvider;
+
   const [user, created] = await AppUser.findOrCreate({
     where: { firebase_uid: decoded.uid },
     defaults: {
       firebase_uid: decoded.uid,
       email: decoded.email || null,
       display_name: decoded.name || decoded.email?.split('@')[0] || 'Learner',
-      provider: 'google',
+      provider,
     },
   });
 
@@ -158,7 +197,7 @@ export const googleSignIn = asyncHandler(async (req, res) => {
   }
 
   if (created) {
-    console.log(`[Firebase Auth] ✓ New app user created: id=${user.id} email=${user.email}`);
+    console.log(`[Firebase Auth] ✓ New app user created: id=${user.id} email=${user.email} via ${provider}`);
   } else {
     if (decoded.email && user.email !== decoded.email) {
       await user.update({ email: decoded.email });
@@ -173,4 +212,4 @@ export const googleSignIn = asyncHandler(async (req, res) => {
   console.log(`[Firebase Auth] ✓ Session JWT issued for user=${user.id}`);
 
   res.json({ token, user: serializeUser(user) });
-});
+}

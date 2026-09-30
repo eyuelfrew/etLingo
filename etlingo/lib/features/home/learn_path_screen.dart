@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/ui/et_strings.dart';
@@ -17,6 +16,7 @@ import '../culture/culture_screen.dart';
 import '../culture/culture_widgets.dart';
 import '../calendar/ethiopian_calendar_screen.dart';
 import '../../widgets/ad_slot.dart';
+import '../../core/widgets/subscribe_sheet.dart';
 import '../../core/calendar/ethiopian_calendar.dart';
 
 class LearnPathScreen extends StatefulWidget {
@@ -605,7 +605,7 @@ class _WordOfDayState extends State<_WordOfDay>
   late final AnimationController _wobble = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 3),
-  )..repeat(reverse: true);
+  )..forward();
 
   @override
   void dispose() {
@@ -619,12 +619,10 @@ class _WordOfDayState extends State<_WordOfDay>
     if (lang.helloTarget.isEmpty && lang.helloMeaning.isEmpty) {
       return const SizedBox.shrink();
     }
-    return AnimatedBuilder(
-      animation: _wobble,
-      builder: (context, child) => Transform.rotate(
-        angle: math.sin(_wobble.value * math.pi) * 0.005,
-        child: child,
-      ),
+    // One-shot fade/scale — no continuous Transform.rotate (avoids
+    // semantics.parentDataDirty assertion every frame).
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: _wobble, curve: Curves.easeOut),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -916,6 +914,18 @@ class _ZigzagNodesState extends State<ZigzagNodes>
 
   void _openLesson(Lesson lesson) {
     final unit = widget.unit;
+    // Chapter is paid and not owned yet → one-time purchase.
+    if (widget.state.isUnitLocked(unit) ||
+        ((lesson.isPremium) && !widget.state.ownsUnit(unit.dbId))) {
+      showUnitPurchaseSheet(
+        context,
+        state: widget.state,
+        unitId: unit.dbId ?? 0,
+        unitTitle: unit.title,
+        priceLabel: unit.priceLabel,
+      );
+      return;
+    }
     final teachItems = unit.teachItemsFor(lesson);
     final hasQuestions = lesson.questions.isNotEmpty;
     final hasTeach = teachItems.isNotEmpty;

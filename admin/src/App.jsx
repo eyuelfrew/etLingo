@@ -15,6 +15,7 @@ import Community from './pages/Community';
 import Scripts from './pages/Scripts';
 import Topics from './pages/Topics';
 import Ads from './pages/Ads';
+import Plans from './pages/Plans';
 
 function Protected({ children }) {
   const { admin } = useAuth();
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="scripts" element={<Scripts />} />
             <Route path="topics" element={<Topics />} />
             <Route path="ads" element={<Ads />} />
+            <Route path="plans" element={<Plans />} />
             <Route path="phrases" element={<Phrases />} />
             <Route path="users" element={<Users />} />
             <Route path="notifications" element={<Notifications />} />

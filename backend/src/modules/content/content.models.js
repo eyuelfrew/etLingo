@@ -34,6 +34,8 @@ export const Unit = sequelize.define('Unit', {
   sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
   // Chapter-level vocabulary — authored once, reused by every lesson in the unit.
   teach_content: { type: DataTypes.JSON, allowNull: true },
+  /** 0 = free; >0 = one-time purchase for the whole chapter (cents). */
+  price_cents: { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { tableName: 'units' });
 
 export const Lesson = sequelize.define('Lesson', {
@@ -46,6 +48,10 @@ export const Lesson = sequelize.define('Lesson', {
   // Lesson file resources: [{ kind: 'pdf'|'audio'|'image', url, title }]
   resources: { type: DataTypes.JSON, allowNull: true },
   sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
+  access_level: {
+    type: DataTypes.ENUM('free', 'premium'),
+    defaultValue: 'free',
+  },
 }, { tableName: 'lessons' });
 
 export const Question = sequelize.define('Question', {

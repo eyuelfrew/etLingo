@@ -1,9 +1,11 @@
 import { Router } from 'express';
-import { requireAuth, optionalAppAuth } from '../../core/auth.js';
+import { requireAuth, optionalAppAuth, requireAppAuth } from '../../core/auth.js';
+import { writeLimiter } from '../../middlewares/rateLimiter.js';
 import {
   listCategories, createCategory, updateCategory, deleteCategory,
   listWords, createWord, updateWord, deleteWord, bulkWords,
   appTopics, appTopicPack,
+  markWordKnown, unmarkWordKnown, myTopicProgress,
 } from './topics.controller.js';
 
 const router = Router();
@@ -11,6 +13,10 @@ const router = Router();
 // App
 router.get('/app/topics/:code', optionalAppAuth, appTopics);
 router.get('/app/topics/:code/:slug', optionalAppAuth, appTopicPack);
+router.get('/app/topics/progress', requireAppAuth, myTopicProgress);
+router.post('/app/topics/words/:id/known', writeLimiter, requireAppAuth, markWordKnown);
+router.delete('/app/topics/words/:id/known', writeLimiter, requireAppAuth, unmarkWordKnown);
+router.post('/app/topics/words/:id/unmark', writeLimiter, requireAppAuth, unmarkWordKnown);
 
 // Admin
 router.get('/admin/topic-categories', requireAuth, listCategories);

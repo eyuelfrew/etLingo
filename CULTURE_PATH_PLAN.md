@@ -169,6 +169,45 @@ Theme word lists (Animals, Food, Colors…) with audio + meaning per language.
 | Holidays on Ethiopian dates (Enkutatash, Meskel, Genna, Timkat, Adwa…) | Done |
 | Dual date (Eth + Gregorian) + upcoming holidays | Done |
 | Open from home / Culture calendar chip | Done |
+| **Bottom nav Script tab** (learner alphabet home) | Done |
+
+---
+
+## 12. Learner API gaps closed
+
+| Piece | Status |
+| --- | --- |
+| Topic word “known” + XP (`topic_word_progress`) | Done |
+| `GET /app/topics/progress` · mark/unmark known | Done |
+| Phrasebook screen (`/app/:code/phrases`) | Done |
+| Known flags on topic packs | Done |
+
+---
+
+## 13. Pay-per-chapter (unit purchases)
+
+**Model:** one-time Chapa payment unlocks a **chapter/unit**. No subscription required.
+
+| Piece | Status |
+| --- | --- |
+| Unit `price_cents` (0 = free, >0 = paid) | Done |
+| Admin **Price (cents)** on unit | Done |
+| Chapa checkout for `unit:<id>` | Done |
+| Server verify → permanent unlock | Done |
+| App lock + **Unlock chapter** dialog | Done |
+| `purchasedUnitIds` on bootstrap | Done |
+| Legacy subscription packages | Kept in admin (optional) |
+
+### Chapa (Ethiopia) — test mode wired
+| Piece | Status |
+| --- | --- |
+| Create hosted checkout (`/v2/payments/hosted`) | Done |
+| Server **verify** (`/v2/payments/:ref/verify`) | Done |
+| Grant subscription after verify | Done |
+| App opens `paymentUrl` | Done |
+| **Payment return auto-verify screen** | Done |
+| **Admin cancel user subscription** (Users page) | Done |
+| Keys | `backend/.env` → `CHAPA_SECRET_KEY` / `CHAPA_PUBLIC_KEY` (gitignored) |
 
 ---
 
@@ -183,4 +222,10 @@ Admin-managed promo slots with placement + tap action + CTR tracking.
 | Slots: home_top · home_mid · culture_top · after_topics · profile | Done |
 | Tap actions: URL / app screen / topic / info | Done |
 | Click + impression tracking (CTR in admin) | Done |
+
+---
+
+## 11. Security hardening
+
+See `SECURITY.md` for the full checklist. Highlights: JWT `aud`/`iss` + `token_version`, auth/write/upload rate limits, comment sanitization, production secret & password policy, HSTS, generic 500s.
 

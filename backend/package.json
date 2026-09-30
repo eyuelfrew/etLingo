@@ -12,7 +12,8 @@
     "db:reset-content": "node scripts/db-reset-content.mjs && node scripts/seed-clean-model.mjs",
     "db:seed-culture": "node scripts/seed-culture.mjs && node scripts/seed-culture-packs.mjs",
     "db:seed-scripts": "node scripts/seed-scripts.mjs && node scripts/seed-fidel-full.mjs",
-    "db:seed-topics": "node scripts/seed-topics.mjs"
+    "db:seed-topics": "node scripts/seed-topics.mjs",
+    "db:seed-plans": "node scripts/seed-plans.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1136.0",

@@ -22,7 +22,32 @@ function toUser(u) {
 
 async function withStats(user) {
   const count = await LessonProgress.count({ where: { app_user_id: user.id } });
-  return { ...toUser(user), lessonsDone: count };
+  // Subscription snapshot for admin list/detail.
+  let subscription = null;
+  try {
+    const { Entitlement } = await import('../entitlements/entitlements.models.js');
+    const rows = await Entitlement.findAll({
+      where: { user_id: user.id },
+      order: [['granted_at', 'DESC']],
+      limit: 5,
+    });
+    const now = new Date();
+    const active = rows.find(
+      (r) => (!r.expires_at || new Date(r.expires_at) >= now) &&
+        (String(r.sku || '').startsWith('sub_') || r.scope === 'all'),
+    );
+    if (rows.length) {
+      subscription = {
+        active: !!active,
+        sku: active ? active.sku : null,
+        expiresAt: active ? active.expires_at : null,
+        count: rows.length,
+      };
+    }
+  } catch {
+    /* optional */
+  }
+  return { ...toUser(user), lessonsDone: count, subscription };
 }
 
 // ── App user self-service ─────────────────────────────────────────────────────
@@ -276,6 +301,17 @@ export const resetMyProgress = asyncHandler(async (req, res) => {
     ...toUser(user),
     completedLessonIds: [],
   });
+});
+
+/** Admin: cancel / revoke this learner's subscription entitlements. */
+export const cancelSubscription = asyncHandler(async (req, res) => {
+  const user = await AppUser.findByPk(req.params.id);
+  if (!user) throw notFound('User not found');
+
+  const { Entitlement } = await import('../entitlements/entitlements.models.js');
+  const deleted = await Entitlement.destroy({ where: { user_id: user.id } });
+  console.log(`[users] admin cancelled subscription for learner #${user.id} (${deleted} entitlement(s) removed)`);
+  res.json(await withStats(user));
 });
 
 export const remove = asyncHandler(async (req, res) => {

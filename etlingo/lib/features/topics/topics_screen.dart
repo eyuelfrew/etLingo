@@ -163,8 +163,8 @@ class _TopicTile extends StatelessWidget {
   }
 }
 
-/// Word list for one theme — tap to hear audio.
-class TopicWordsScreen extends StatelessWidget {
+/// Word list for one theme — tap to hear audio; check to mark known.
+class TopicWordsScreen extends StatefulWidget {
   final AppState state;
   final TopicCategory category;
   const TopicWordsScreen({
@@ -174,17 +174,55 @@ class TopicWordsScreen extends StatelessWidget {
   });
 
   @override
+  State<TopicWordsScreen> createState() => _TopicWordsScreenState();
+}
+
+class _TopicWordsScreenState extends State<TopicWordsScreen> {
+  final Set<int> _known = {};
+
+  Future<void> _toggleKnown(TopicWord w) async {
+    if (!widget.state.canEngage) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(EtStrings.signInToEngage)));
+      return;
+    }
+    final was = _known.contains(w.id);
+    setState(() {
+      if (was) {
+        _known.remove(w.id);
+      } else {
+        _known.add(w.id);
+      }
+    });
+    if (was) {
+      await widget.state.unmarkWordKnown(w.id);
+    } else {
+      await widget.state.markWordKnown(w.id);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final words = category.words;
-    final base = state.baseLanguage;
+    final words = widget.category.words;
+    final base = widget.state.baseLanguage;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: EtColors.ink,
         elevation: 0,
-        title: Text('${category.emoji} ${category.title}'),
+        title: Text('${widget.category.emoji} ${widget.category.title}'),
         actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Text(
+                '${_known.length}/${words.length}',
+                style: const TextStyle(
+                    fontWeight: FontWeight.w800, color: EtColors.muted),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: EtStrings.quizMe,
             icon: const Icon(Icons.quiz_rounded),
@@ -193,8 +231,8 @@ class TopicWordsScreen extends StatelessWidget {
                 : () {
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => TopicQuizScreen(
-                        state: state,
-                        category: category,
+                        state: widget.state,
+                        category: widget.category,
                       ),
                     ));
                   },
@@ -208,11 +246,15 @@ class TopicWordsScreen extends StatelessWidget {
         itemBuilder: (ctx, i) {
           final w = words[i];
           final meaning = w.meaningFor(base);
+          final known = _known.contains(w.id);
           return Container(
             decoration: BoxDecoration(
-              color: EtColors.card,
+              color: known
+                  ? EtColors.green.withValues(alpha: 0.06)
+                  : EtColors.card,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: EtColors.line),
+              border:
+                  Border.all(color: known ? EtColors.green : EtColors.line),
             ),
             child: ListTile(
               contentPadding:
@@ -223,28 +265,41 @@ class TopicWordsScreen extends StatelessWidget {
                     fontSize: 22, fontWeight: FontWeight.w800),
               ),
               subtitle: Text(
-                w.translit.isNotEmpty
-                    ? '${w.translit} · $meaning'
-                    : meaning,
+                w.translit.isNotEmpty ? '${w.translit} · $meaning' : meaning,
                 style: const TextStyle(
                     fontWeight: FontWeight.w600, color: EtColors.muted),
               ),
-              trailing: IconButton(
-                icon: Icon(
-                  w.hasAudio
-                      ? Icons.volume_up_rounded
-                      : Icons.volume_off_outlined,
-                  color: w.hasAudio ? EtColors.blue : EtColors.locked,
-                  size: 28,
-                ),
-                onPressed: () {
-                  if (w.hasAudio) {
-                    AudioService.instance.play(w.audioUrl);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(EtStrings.noAudioYet)));
-                  }
-                },
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: known ? 'Known' : 'Mark known',
+                    icon: Icon(
+                      known
+                          ? Icons.check_circle_rounded
+                          : Icons.check_circle_outline_rounded,
+                      color: known ? EtColors.green : EtColors.locked,
+                    ),
+                    onPressed: () => _toggleKnown(w),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      w.hasAudio
+                          ? Icons.volume_up_rounded
+                          : Icons.volume_off_outlined,
+                      color: w.hasAudio ? EtColors.blue : EtColors.locked,
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      if (w.hasAudio) {
+                        AudioService.instance.play(w.audioUrl);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(EtStrings.noAudioYet)));
+                      }
+                    },
+                  ),
+                ],
               ),
               onTap: () {
                 if (w.hasAudio) AudioService.instance.play(w.audioUrl);

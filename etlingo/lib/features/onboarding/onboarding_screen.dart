@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/ui/et_strings.dart';
+import '../../core/widgets/exit_guard.dart';
 import '../../core/widgets/tibeb_band.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -41,7 +42,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ExitGuard(
+      child: Scaffold(
       body: Container(
         // Rich, deep emerald — reads premium rather than flat flag-green.
         decoration: const BoxDecoration(
@@ -150,6 +152,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ],
           ),
         ),
+      ),
       ),
     );
   }

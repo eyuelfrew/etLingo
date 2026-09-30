@@ -71,6 +71,9 @@ async function run() {
     await admin.update({ password_hash: await bcrypt.hash('admin123', 12) });
   }
   console.log(`[db:init] admin → ${adminEmail} / admin123`);
+  if ((process.env.NODE_ENV || 'development') === 'production') {
+    console.warn('[db:init] WARNING: default admin123 password is insecure — change it immediately');
+  }
 
   // ── Seed starter languages ──────────────────────────────────────────────────
   let created = 0;

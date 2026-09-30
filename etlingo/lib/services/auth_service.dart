@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -121,6 +123,76 @@ class AuthService extends ChangeNotifier {
         await _persistUser();
       }
       // Register this device for push once the app session exists.
+      await registerPushToken();
+    } catch (e) {
+      rethrow;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Facebook Login → Firebase → etLingo session (same as Google).
+  Future<void> signInWithFacebook() async {
+    try {
+      _loading = true;
+      notifyListeners();
+
+      if (kIsWeb || !(defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS)) {
+        throw Exception(
+          'Facebook login runs on Android/iOS app builds only '
+          '(platform: $defaultTargetPlatform).',
+        );
+      }
+
+      final FacebookAuth fb = FacebookAuth.instance;
+      LoginResult result;
+      try {
+        result = await fb.login();
+      } on MissingPluginException catch (e) {
+        debugPrint('[FB] MissingPluginException platform=$defaultTargetPlatform '
+            'web=$kIsWeb err=$e');
+        throw Exception(
+          'Facebook SDK missing in this APK.\n'
+          '1) Uninstall the app from the phone\n'
+          '2) In D:\\etlingo\\etlingo: flutter clean && flutter pub get && flutter run\n'
+          'Do not use hot reload or an old APK.',
+        );
+      }
+      if (result.status != LoginStatus.success || result.accessToken == null) {
+        debugPrint('[FB] login status=${result.status} '
+            'msg=${result.message}');
+        _loading = false;
+        notifyListeners();
+        return;
+      }
+
+      final token = result.accessToken!.tokenString;
+      final credential = FacebookAuthProvider.credential(token);
+      final userCredential = await _auth.signInWithCredential(credential);
+      _user = userCredential.user;
+
+      _displayName = _user?.displayName ?? 'Learner';
+      _email = _user?.email;
+      _photoUrl = _user?.photoURL;
+
+      final idToken = await _user?.getIdToken();
+      if (idToken == null) {
+        throw Exception('Failed to get Firebase ID token');
+      }
+
+      final data = await _api.post('/app/auth/facebook',
+          body: {'idToken': idToken}, auth: false);
+      if (data is Map<String, dynamic>) {
+        _token = data['token'] as String?;
+        final userData = data['user'];
+        if (userData is Map<String, dynamic>) {
+          _displayName = userData['displayName'] as String? ?? _displayName;
+          _email = userData['email'] as String? ?? _email;
+        }
+        await _persistUser();
+      }
       await registerPushToken();
     } catch (e) {
       rethrow;
@@ -250,6 +322,9 @@ class AuthService extends ChangeNotifier {
     await unregisterPushToken();
     try {
       await _googleSignIn.signOut();
+      try {
+        await FacebookAuth.instance.logOut();
+      } catch (_) {}
       await _auth.signOut();
     } catch (_) {}
 

@@ -1,6 +1,7 @@
-import { TopicCategory, TopicWord } from './topics.models.js';
+import { TopicCategory, TopicWord, TopicWordProgress } from './topics.models.js';
 import { Language } from '../content/content.models.js';
-import { asyncHandler, badRequest, notFound } from '../../core/http.js';
+import { AppUser } from '../users/users.models.js';
+import { asyncHandler, badRequest, notFound, unauthorized } from '../../core/http.js';
 
 function pick(obj, fields) {
   const out = {};
@@ -190,6 +191,22 @@ export const appTopics = asyncHandler(async (req, res) => {
     byCat.get(cid).push(wo);
   }
 
+  // Known-word flags for signed-in learners.
+  let known = new Set();
+  const viewerId = req.auth?.sub != null ? Number(req.auth.sub) : null;
+  if (viewerId && words.length) {
+    const rows = await TopicWordProgress.findAll({
+      where: { user_id: viewerId },
+      attributes: ['topic_word_id'],
+    });
+    known = new Set(rows.map((r) => r.topic_word_id));
+  }
+  for (const list of byCat.values()) {
+    for (const wo of list) {
+      wo.known = known.has(wo.id);
+    }
+  }
+
   res.json({
     language: {
       code: lang.code,
@@ -199,6 +216,7 @@ export const appTopics = asyncHandler(async (req, res) => {
     categories: cats.map((c) => ({
       ...catOut(c),
       wordCount: (byCat.get(c.id) || []).length,
+      knownCount: (byCat.get(c.id) || []).filter((w) => w.known).length,
       words: byCat.get(c.id) || [],
     })),
   });
@@ -225,4 +243,65 @@ export const appTopicPack = asyncHandler(async (req, res) => {
     return wo;
   });
   res.json({ ...catOut(cat), words: list });
+});
+
+// ── Learner word progress ────────────────────────────────────────────────────
+
+/** POST /app/topics/words/:id/known — mark a word learned (+2 XP once). */
+export const markWordKnown = asyncHandler(async (req, res) => {
+  if (req.auth?.sub == null) throw unauthorized('Sign in required');
+  const userId = Number(req.auth.sub);
+  const wordId = Number(req.params.id);
+  if (!Number.isInteger(wordId) || wordId <= 0) throw badRequest('Invalid word id');
+
+  const word = await TopicWord.findByPk(wordId);
+  if (!word) throw notFound('Word not found');
+
+  const [, created] = await TopicWordProgress.findOrCreate({
+    where: { user_id: userId, topic_word_id: wordId },
+    defaults: { user_id: userId, topic_word_id: wordId },
+  });
+
+  let earned = 0;
+  if (created) {
+    earned = 2;
+    const user = await AppUser.findByPk(userId);
+    if (user) {
+      await user.update({ xp: (Number(user.xp) || 0) + earned });
+    }
+  }
+
+  const total = await TopicWordProgress.count({
+    where: { user_id: userId, topic_word_id: wordId },
+  });
+  res.json({
+    wordId,
+    known: true,
+    alreadyKnown: !created,
+    earned,
+    learnedCount: await TopicWordProgress.count({ where: { user_id: userId } }),
+  });
+});
+
+/** DELETE /app/topics/words/:id/known */
+export const unmarkWordKnown = asyncHandler(async (req, res) => {
+  if (req.auth?.sub == null) throw unauthorized('Sign in required');
+  const userId = Number(req.auth.sub);
+  const wordId = Number(req.params.id);
+  await TopicWordProgress.destroy({
+    where: { user_id: userId, topic_word_id: wordId },
+  });
+  res.json({ wordId, known: false });
+});
+
+/** GET /app/topics/progress — known word ids for the signed-in learner. */
+export const myTopicProgress = asyncHandler(async (req, res) => {
+  if (req.auth?.sub == null) throw unauthorized('Sign in required');
+  const rows = await TopicWordProgress.findAll({
+    where: { user_id: Number(req.auth.sub) },
+  });
+  res.json({
+    wordIds: rows.map((r) => r.topic_word_id),
+    learnedCount: rows.length,
+  });
 });

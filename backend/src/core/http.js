@@ -19,6 +19,13 @@ export function errorHandler(err, req, res, _next) {
     return res.status(400).json({ error: 'Invalid JSON body' });
   }
   const status = err.status || 500;
-  if (status >= 500) console.error(err);
-  res.status(status).json({ error: err.message || 'Internal server error' });
+  if (status >= 500) {
+    console.error(err);
+    // Never leak stack traces or internal messages in production.
+    const prod = (process.env.NODE_ENV || 'development') === 'production';
+    return res.status(500).json({
+      error: prod ? 'Internal server error' : (err.message || 'Internal server error'),
+    });
+  }
+  res.status(status).json({ error: err.message || 'Error' });
 }

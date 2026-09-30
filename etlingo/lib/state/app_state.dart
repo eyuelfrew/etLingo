@@ -74,6 +74,59 @@ class AppState extends ChangeNotifier {
   bool _onboarded = false;
   String _baseLanguage = 'en';
   String _appLanguage = 'en';
+  bool _subscribed = false;
+  bool get subscribed => _subscribed;
+
+  /// Unit ids unlocked by one-time purchase (chapter paywalls).
+  final Set<int> _ownedUnitIds = {};
+  bool ownsUnit(int? unitId) =>
+      unitId != null && (_ownedUnitIds.contains(unitId) || _subscribed);
+
+  bool isUnitLocked(Unit unit) {
+    if (!unit.isPaid && !unit.isPremium) return false;
+    return !ownsUnit(unit.dbId);
+  }
+
+  /// Purchase a paid chapter via Chapa (returns payment URL or error msg).
+  Future<Map<String, dynamic>?> checkoutUnit(int unitId) async {
+    try {
+      final data = await _api.post('/app/checkout/unit', body: {'unitId': unitId});
+      if (data is Map<String, dynamic>) {
+        final raw = data['purchasedUnitIds'];
+        if (raw is List) {
+          for (final x in raw) {
+            final n = x is num ? x.toInt() : int.tryParse('$x');
+            if (n != null) _ownedUnitIds.add(n);
+          }
+        }
+        if (data['status'] == 'owned' || data['status'] == 'paid') {
+          _ownedUnitIds.add(unitId);
+        }
+        notifyListeners();
+        return data;
+      }
+    } catch (e) {
+      return {'error': e.toString().replaceFirst('Exception: ', '')};
+    }
+    return null;
+  }
+
+  Future<void> markUnitOwned(int unitId) async {
+    _ownedUnitIds.add(unitId);
+    notifyListeners();
+    await _persistLocalProgress();
+  }
+
+  /// Pull subscription status (Chapa verify / admin grant).
+  Future<void> loadEntitlements() async {
+    try {
+      final data = await _api.get('/app/entitlements');
+      if (data is Map) {
+        _subscribed = data['subscribed'] == true;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
 
   bool _loadingLanguages = false;
   bool _loadingContent = false;
@@ -210,7 +263,11 @@ class AppState extends ChangeNotifier {
     if (code == null || code.isEmpty) return false;
 
     try {
-      final full = await _content.loadLanguageContent(code);
+      final res = await _content.loadLanguageContent(code);
+      final full = res.language;
+      _ownedUnitIds
+        ..clear()
+        ..addAll(res.purchasedUnitIds);
       if (full == null) return false;
       _language = full;
       _onboarded = true;
@@ -230,7 +287,11 @@ class AppState extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final fresh = await _content.loadLanguageContent(code);
+      final res = await _content.loadLanguageContent(code);
+      final fresh = res.language;
+      _ownedUnitIds
+        ..clear()
+        ..addAll(res.purchasedUnitIds);
       if (!mounted) return false;
       if (fresh != null && fresh.id == code) {
         _language = fresh;
@@ -267,7 +328,11 @@ class AppState extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final full = await _content.loadLanguageContent(lang.id);
+      final res = await _content.loadLanguageContent(lang.id);
+      final full = res.language;
+      _ownedUnitIds
+        ..clear()
+        ..addAll(res.purchasedUnitIds);
       if (full != null) _language = full;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_langKey, lang.id);
@@ -609,6 +674,58 @@ class AppState extends ChangeNotifier {
     try {
       await _api.post('/app/ads/$adId/click');
     } catch (_) {}
+  }
+
+  /// Mark a topic word as known (+2 XP first time).
+  Future<int> markWordKnown(int wordId) async {
+    try {
+      final data = await _api.post('/app/topics/words/$wordId/known');
+      final earned = data is Map ? (data['earned'] as num?)?.toInt() ?? 0 : 0;
+      if (earned > 0) {
+        _xp += earned;
+        _xpToday += earned;
+        notifyListeners();
+        await _persistLocalProgress();
+      }
+      return earned;
+    } catch (e) {
+      debugPrint('[topics] mark known failed: $e');
+      return 0;
+    }
+  }
+
+  Future<void> unmarkWordKnown(int wordId) async {
+    try {
+      await _api.post('/app/topics/words/$wordId/unmark');
+    } catch (_) {
+      try {
+        await _api.post('/app/topics/words/$wordId/known');
+      } catch (_) {}
+    }
+  }
+
+  /// Phrasebook for the current course language.
+  Future<List<Phrase>> loadPhrases() async {
+    final code = _language.id;
+    if (code.isEmpty) return const [];
+    try {
+      final data = await _api.getWithOptionalAuth('/app/$code/phrases');
+      if (data is List) {
+        return data
+            .whereType<Map>()
+            .map((e) => Phrase.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+      if (data is Map && data['phrases'] is List) {
+        return (data['phrases'] as List)
+            .whereType<Map>()
+            .map((e) => Phrase.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('[phrases] load failed: $e');
+    }
+    return _language.phrases;
   }
 
   /// Pull server truth (xp/streak/hearts/completed) after sign-in.

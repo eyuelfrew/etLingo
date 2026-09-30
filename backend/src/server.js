@@ -23,6 +23,10 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  hsts: process.env.NODE_ENV === 'production'
+    ? { maxAge: 31536000, includeSubDomains: true, preload: false }
+    : false,
+  referrerPolicy: { policy: 'no-referrer' },
 }));
 
 // CORS — admin console (local + configured). Proxy same-origin requests skip CORS.
@@ -49,6 +53,14 @@ app.use(cors({
 // Body parsing — do not crash on empty/null JSON bodies.
 app.use(express.json({ limit: '2mb', strict: false }));
 
+// API versioning: all business routes live under /api/v1.
+// Echo the contract version on every response so clients/gateways can assert it.
+const API_VERSION = process.env.API_VERSION || 'v1';
+app.use((req, res, next) => {
+  res.setHeader('X-API-Version', API_VERSION);
+  next();
+});
+
 // Request logging — morgan + [http] echo (always on; file + console).
 app.use(requestLogger);
 app.use(requestEcho);
@@ -63,6 +75,7 @@ app.get('/api/health', async (_req, res) => {
   res.status(isOk ? 200 : 503).json({
     status: isOk ? 'ok' : 'degraded',
     service: 'etlingo-backend',
+    apiVersion: API_VERSION,
     mysql, redis, firebase, s3,
     time: new Date().toISOString(),
   });

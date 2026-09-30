@@ -23,6 +23,10 @@ const COLUMNS = [
   { table: 'units', column: 'teach_content', clause: 'teach_content JSON NULL' },
   { table: 'questions', column: 'content', clause: 'content JSON NULL' },
   { table: 'scripts', column: 'language_id', clause: 'language_id INT UNSIGNED NULL' },
+  { table: 'admins', column: 'token_version', clause: 'token_version INT NOT NULL DEFAULT 0' },
+  { table: 'units', column: 'access_level', clause: "access_level ENUM('free','premium') NOT NULL DEFAULT 'free'" },
+  { table: 'lessons', column: 'access_level', clause: "access_level ENUM('free','premium') NOT NULL DEFAULT 'free'" },
+  { table: 'units', column: 'price_cents', clause: 'price_cents INT NOT NULL DEFAULT 0' },
 ];
 
 // Idempotent enum widenings: [{ table, column, type, mustInclude }]
@@ -39,6 +43,12 @@ const ENUMS = [
     column: 'kind',
     type: "ENUM('text','fact','proverb','steps','vocab','calendar','media','music') NOT NULL DEFAULT 'text'",
     mustInclude: "'music'",
+  },
+  {
+    table: 'app_users',
+    column: 'provider',
+    type: "ENUM('guest','email','google','facebook','apple','other') NOT NULL DEFAULT 'guest'",
+    mustInclude: "'facebook'",
   },
 ];
 
@@ -186,6 +196,47 @@ const TABLES = {
     INDEX idx_story_status (status),
     INDEX idx_story_user (user_id)
   ) ENGINE=InnoDB;`,
+  checkout_intents: `CREATE TABLE IF NOT EXISTS checkout_intents (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    sku VARCHAR(60) NOT NULL,
+    amount_cents INT NOT NULL DEFAULT 0,
+    currency VARCHAR(8) NOT NULL DEFAULT 'ETB',
+    status ENUM('pending','paid','failed','cancelled','unpaid') NOT NULL DEFAULT 'unpaid',
+    provider VARCHAR(40) DEFAULT 'none',
+    provider_ref VARCHAR(120) DEFAULT '',
+    payload JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ci_user (user_id),
+    INDEX idx_ci_sku (sku)
+  ) ENGINE=InnoDB;`,
+  entitlements: `CREATE TABLE IF NOT EXISTS entitlements (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    scope VARCHAR(40) NOT NULL DEFAULT 'all',
+    scope_id INT UNSIGNED NULL,
+    sku VARCHAR(60) NOT NULL DEFAULT '',
+    source ENUM('seed','admin','promo','purchase','trial') NOT NULL DEFAULT 'admin',
+    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NULL,
+    note VARCHAR(200) DEFAULT '',
+    INDEX idx_ent_user (user_id, scope, scope_id),
+    UNIQUE KEY uq_ent_user_sku (user_id, sku)
+  ) ENGINE=InnoDB;`,
+  subscription_plans: `CREATE TABLE IF NOT EXISTS subscription_plans (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    sku VARCHAR(60) NOT NULL UNIQUE,
+    title VARCHAR(80) NOT NULL,
+    subtitle VARCHAR(160) DEFAULT '',
+    period ENUM('month','year','trial') NOT NULL DEFAULT 'month',
+    price_cents INT NOT NULL DEFAULT 0,
+    currency VARCHAR(8) DEFAULT 'ETB',
+    features JSON NULL,
+    badge VARCHAR(40) DEFAULT '',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    is_highlighted TINYINT(1) NOT NULL DEFAULT 0,
+    sort_order INT NOT NULL DEFAULT 0
+  ) ENGINE=InnoDB;`,
   exchange_signups: `CREATE TABLE IF NOT EXISTS exchange_signups (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NOT NULL,
@@ -261,6 +312,14 @@ const TABLES = {
     notes VARCHAR(300) DEFAULT '',
     sort_order INT NOT NULL DEFAULT 0,
     INDEX idx_tw_cat (category_id)
+  ) ENGINE=InnoDB;`,
+  topic_word_progress: `CREATE TABLE IF NOT EXISTS topic_word_progress (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    topic_word_id INT UNSIGNED NOT NULL,
+    learned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_word_known (user_id, topic_word_id),
+    INDEX idx_twp_user (user_id)
   ) ENGINE=InnoDB;`,
   ads: `CREATE TABLE IF NOT EXISTS ads (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

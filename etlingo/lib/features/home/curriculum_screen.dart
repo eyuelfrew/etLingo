@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/ui/et_strings.dart';
 import '../../core/widgets/et_icons.dart';
+import '../../core/widgets/subscribe_sheet.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../lesson/lesson_screen.dart';
@@ -18,28 +19,42 @@ class CurriculumScreen extends StatelessWidget {
     this.showPathCta = true,
   });
 
+  void _goBack(BuildContext context) {
+    // Prefer pop → previous screen; else go to Learn home (not app exit).
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacementNamed('/home');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = state.language;
     final accent = lang.id.isEmpty ? EtColors.green : lang.color;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _goBack(context);
+      },
+      child: Scaffold(
       backgroundColor: EtColors.paper,
       appBar: AppBar(
         backgroundColor: EtColors.paper,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        leading: Navigator.of(context).canPop()
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: EtColors.ink),
-                onPressed: () => Navigator.of(context).maybePop(),
-              )
-            : IconButton(
-                icon: const Icon(Icons.close_rounded, color: EtColors.ink),
-                tooltip: EtStrings.tabLearn,
-                onPressed: () =>
-                    Navigator.of(context).pushReplacementNamed('/home'),
-              ),
+        leading: IconButton(
+          icon: Icon(
+            Navigator.of(context).canPop()
+                ? Icons.arrow_back_rounded
+                : Icons.close_rounded,
+            color: EtColors.ink,
+          ),
+          tooltip: EtStrings.tabLearn,
+          onPressed: () => _goBack(context),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -275,6 +290,7 @@ class CurriculumScreen extends StatelessWidget {
           },
         ),
       ),
+      ),
     );
   }
 }
@@ -332,7 +348,12 @@ class _UnitBlock extends StatelessWidget {
     required this.accent,
   });
 
-  static bool isPremiumLesson(Lesson lesson) => false;
+  /// Admin sets unit `priceCents > 0` → one-time chapter purchase.
+  bool isPremiumLesson(Lesson lesson) {
+    return unit.isPaid || unit.isPremium || lesson.isPremium;
+  }
+
+  bool get _hasSub => state.ownsUnit(unit.dbId);
 
   bool isUnlocked(Lesson lesson) {
     final flat = <Lesson>[];
@@ -454,13 +475,23 @@ class _UnitBlock extends StatelessWidget {
                   final completed =
                       state.completedLessons.contains(lesson.id);
                   final unlocked = isUnlocked(lesson);
-                  final premium = isPremiumLesson(lesson);
+                  final premium = isPremiumLesson(lesson) && !_hasSub;
                   final canOpen = unlocked && !premium;
 
                   return InkWell(
-                    onTap: canOpen
-                        ? () => openLesson(context, state, lesson, unit)
-                        : null,
+                    onTap: () {
+                      if (canOpen) {
+                        openLesson(context, state, lesson, unit);
+                      } else if (premium) {
+                        showUnitPurchaseSheet(
+                          context,
+                          state: state,
+                          unitId: unit.dbId ?? 0,
+                          unitTitle: unit.title,
+                          priceLabel: unit.priceLabel,
+                        );
+                      }
+                    },
                     child: Container(
                       padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
                       decoration: BoxDecoration(

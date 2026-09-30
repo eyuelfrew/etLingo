@@ -23,3 +23,21 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many auth attempts, please try again later' },
 });
+
+/** Write actions (comments, likes, stories) — 30/min per IP. */
+export const writeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many actions, please slow down' },
+});
+
+/** Content uploads — 20/min per IP. */
+export const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many uploads, please try again later' },
+});

@@ -12,16 +12,19 @@ class EtBottomNav extends StatelessWidget {
 
   static const _icons = [
     Icons.school_rounded,
+    Icons.abc_rounded,
     Icons.person_rounded,
   ];
 
   static const _accent = [
     EtColors.green,
+    EtColors.gold,
     EtColors.blue,
   ];
 
   List<String> get _labels => [
         EtStrings.tabLearn,
+        EtStrings.tabScript,
         EtStrings.tabYou,
       ];
 
@@ -56,40 +59,20 @@ class EtBottomNav extends StatelessWidget {
                   left: 0,
                   right: 0,
                   child: Row(
-                    children: [
-                      Expanded(
+                    children: List.generate(_icons.length, (i) {
+                      final stripe = [
+                        EtColors.green,
+                        EtColors.yellow,
+                        EtColors.red,
+                      ];
+                      final c = stripe[i % stripe.length];
+                      return Expanded(
                         child: Container(
                           height: 3,
-                          color: index == 0
-                              ? EtColors.green
-                              : EtColors.green.withValues(alpha: 0.35),
+                          color: index == i ? c : c.withValues(alpha: 0.35),
                         ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 3,
-                          color: index == 1
-                              ? EtColors.yellow
-                              : EtColors.yellow.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 3,
-                          color: index == 2
-                              ? EtColors.red
-                              : EtColors.red.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 3,
-                          color: index == 3
-                              ? EtColors.blue
-                              : EtColors.blue.withValues(alpha: 0.25),
-                        ),
-                      ),
-                    ],
+                      );
+                    }),
                   ),
                 ),
                 Padding(

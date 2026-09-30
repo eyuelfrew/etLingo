@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { asyncHandler, unauthorized, forbidden } from './http.js';
 
+const ISSUER = 'etlingo';
+
 const secret = () => {
   const s = process.env.JWT_SECRET;
   if (!s) {
@@ -9,6 +11,12 @@ const secret = () => {
     }
     console.warn('⚠️  JWT_SECRET not set — using insecure fallback (development only)');
     return 'change_me_in_production';
+  }
+  if (s.length < 32) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET must be at least 32 characters in production');
+    }
+    console.warn('⚠️  JWT_SECRET is short (<32 chars) — generate a strong secret');
   }
   return s;
 };
@@ -19,41 +27,72 @@ const secret = () => {
 
 export function signToken(admin) {
   return jwt.sign(
-    { sub: admin.id, role: admin.role },
+    {
+      sub: admin.id,
+      role: admin.role,
+      aud: 'admin',
+      iss: ISSUER,
+      tv: admin.token_version ?? 0,
+    },
     secret(),
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
+    { expiresIn: process.env.JWT_EXPIRES_IN || '12h' },
   );
 }
 
 export function signAppToken(user) {
   return jwt.sign(
-    { sub: user.id, role: 'app_user' },
+    {
+      sub: user.id,
+      role: 'app_user',
+      aud: 'app',
+      iss: ISSUER,
+      tv: user.token_version ?? 0,
+    },
     secret(),
-    { expiresIn: '30d' },
+    { expiresIn: process.env.APP_JWT_EXPIRES_IN || '30d' },
   );
 }
 
-function verify(token) {
+function verify(token, expectedAud) {
+  let payload;
   try {
-    return jwt.verify(token, secret());
+    payload = jwt.verify(token, secret(), {
+      issuer: ISSUER,
+      ...(expectedAud ? { audience: expectedAud } : {}),
+    });
   } catch {
-    throw unauthorized('Invalid or expired token');
+    try {
+      payload = jwt.verify(token, secret());
+    } catch {
+      throw unauthorized('Invalid or expired token');
+    }
   }
+  if (expectedAud && payload.aud && payload.aud !== expectedAud) {
+    throw unauthorized('Invalid token audience');
+  }
+  return payload;
 }
 
 async function bearer(req) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) throw unauthorized('Missing bearer token');
+  if (token.length > 4096) throw unauthorized('Token too large');
   return verify(token);
 }
 
 // ── Admin console guard (auth module) ────────────────────────────────────────
 export const requireAuth = asyncHandler(async (req, _res, next) => {
   const payload = await bearer(req);
+  if (payload.role === 'app_user') throw unauthorized('Not an admin token');
+  if (payload.aud && payload.aud !== 'admin') throw unauthorized('Not an admin token');
   const { Admin } = await import('../modules/auth/auth.models.js');
   const admin = await Admin.findByPk(payload.sub);
   if (!admin) throw unauthorized('Account no longer exists');
+  const tv = admin.token_version ?? 0;
+  if (payload.tv != null && Number(payload.tv) !== Number(tv)) {
+    throw unauthorized('Session expired — please sign in again');
+  }
 
   req.auth = { sub: admin.id, role: admin.role };
   next();
@@ -68,6 +107,7 @@ export const requireSuper = asyncHandler(async (req, _res, next) => {
 export const requireAppAuth = asyncHandler(async (req, _res, next) => {
   const payload = await bearer(req);
   if (payload.role !== 'app_user') throw unauthorized('Not an app user token');
+  if (payload.aud && payload.aud !== 'app') throw unauthorized('Not an app user token');
 
   const { AppUser } = await import('../modules/users/users.models.js');
   const user = await AppUser.findByPk(payload.sub);
